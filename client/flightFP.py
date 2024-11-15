@@ -563,9 +563,9 @@ if __name__ == '__main__':
     ## Flight code here!
     flight_commands = [
         # short hop
-        # lambda: drone_client.move(0.0, 0.0, 0.2, 0.0, 1.0),
+        lambda: drone_client.move(0.0, 0.0, 0.2, 0.0, 2.0),
         # lambda: drone_client.move_smooth([0.0, 0.0, 0.2], [0.0, 0.0, 0.5], 0.0, 0.2),
-        lambda: drone_client.stop(5)
+        #lambda: drone_client.stop(5)
 
         # # # yaw test
         # # lambda: drone_client.move(0.0, 0.0, 0.5, -35.0, 3.0),
