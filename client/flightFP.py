@@ -559,7 +559,7 @@ if __name__ == '__main__':
 
     # Find offset 
     drone_client.initialize_offset()
-#comment
+#commentdsdsdsdfsdfsdf
     ## Flight code here!
     flight_commands = [
         # short hop
