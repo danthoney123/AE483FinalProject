@@ -205,7 +205,6 @@ if __name__ == '__main__':
     else:
         time.sleep(2.0)
         print('No bounds to send, proceeding.')
-    ### Put flight code below here! ###
 
     # Find offset 
     drone_client.initialize_offset(mocap_obj=mocap_client)
