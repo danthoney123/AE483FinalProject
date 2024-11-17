@@ -20,6 +20,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 import logging
+import time
 
 from .memory_element import MemoryElement
 
@@ -84,7 +85,7 @@ class LEDDriverMemory(MemoryElement):
                   led.intensity / 100)
             tmp = (int(R5) << 11) | (int(G6) << 5) | (int(B5) << 0)
             data += bytearray((tmp >> 8, tmp & 0xFF))
-        self.mem_handler.write(self, 0x00, data, flush_queue=True)
+        self.mem_handler.write_LED(self, 0x00, data)
 
     def update(self, update_finished_cb):
         """Request an update of the memory content"""
@@ -96,6 +97,7 @@ class LEDDriverMemory(MemoryElement):
             self.mem_handler.read(self, 0, 16)
 
     def write_done(self, mem, addr):
+        print('The write_done funct is being called!')
         if self._write_finished_cb and mem.id == self.id:
             logger.debug('Write to LED driver done')
             self._write_finished_cb(self, addr)

@@ -320,7 +320,6 @@ class Crazyflie():
                              be sent back, otherwise false
 
         """
-
         if not pk.is_data_size_valid():
             raise Exception('Data part of packet is too large')
 

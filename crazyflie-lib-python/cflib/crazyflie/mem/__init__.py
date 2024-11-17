@@ -30,6 +30,7 @@ import errno
 import logging
 import struct
 from threading import Lock
+import time
 
 from .deck_memory import DeckMemoryManager
 from .i2c_element import I2CElement
@@ -185,7 +186,6 @@ class _WriteRequest:
 
         data = self._data[:new_len]
         self._data = self._data[new_len:]
-
         pk = CRTPPacket()
         pk.set_header(CRTPPort.MEM, CHAN_WRITE)
         pk.data = struct.pack('<BI', self.mem.id, self._current_addr)
@@ -195,6 +195,8 @@ class _WriteRequest:
         # Add the data
         pk.data += struct.pack('B' * len(data), *data)
         self._sent_packet = pk
+
+
         self.cf.send_packet(pk, expected_reply=reply, timeout=1)
 
         self._addr_add = len(data)
@@ -326,7 +328,6 @@ class Memory():
         wreq = _WriteRequest(memory, addr, data, self.cf, progress_cb)
         if memory.id not in self._write_requests:
             self._write_requests[memory.id] = []
-
         # Workaround until we secure the uplink and change messages for
         # mems to non-blocking
         self._write_requests_lock.acquire()
@@ -339,6 +340,14 @@ class Memory():
         self._write_requests_lock.release()
 
         return True
+
+    def write_LED(self, memory, addr, data):
+        pk = CRTPPacket()
+        pk.port = CRTPPort.MEM
+        pk.channel = CHAN_WRITE
+        pk.data = struct.pack('<BI', memory.id, addr)
+        pk.data += struct.pack('B' * len(data), *data)
+        self.cf.send_packet(pk)
 
     def read(self, memory, addr, length):
         """
