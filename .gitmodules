@@ -1,12 +1,9 @@
 [submodule "crazyflie-firmware"]
 	path = crazyflie-firmware
-	url = https://github.com/bitcraze/crazyflie-firmware.git
-[submodule "crazyflie-client"]
-	path = crazyflie-client
-	url = https://github.com/bitcraze/crazyflie-client.git
+	url = https://github.com/FlyingFaller/crazyflie-firmware.git
 [submodule "crazyflie-clients-python"]
 	path = crazyflie-clients-python
-	url = https://github.com/bitcraze/crazyflie-clients-python.git
+	url = https://github.com/FlyingFaller/crazyflie-clients-python.git
 [submodule "crazyflie-lib-python"]
 	path = crazyflie-lib-python
-	url = https://github.com/bitcraze/crazyflie-lib-python.git
+	url = https://github.com/FlyingFaller/crazyflie-lib-python.git
