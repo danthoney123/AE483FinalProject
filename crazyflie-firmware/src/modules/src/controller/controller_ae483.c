@@ -107,40 +107,13 @@ static uint8_t use_LED = 1;
 static uint8_t safe_to_set_motors = 1; // Safety variable! False if drone is unsafe.
 static uint8_t use_safety = 1; // Use the safety checking system
 
-// Initialize default_bounds array with hardcoded limits
-#define NUM_BOUNDS 24
-static float default_bounds[NUM_BOUNDS][2] = {
-    {-80.0f, 80.0f}, // n_x bounds (N_X_LOWER, N_X_UPPER)
-    {-80.0f, 80.0f}, // n_y bounds (N_Y_LOWER, N_Y_UPPER)
-    {0.0f, 1.0f},    // r bounds (R_LOWER, R_UPPER)
-    {-1.0f, 1.0f},   // psi bounds (PSI_LOWER, PSI_UPPER)
-    {-0.2f, 0.2f},   // theta bounds (THETA_LOWER, THETA_UPPER)
-    {-0.2f, 0.2f},   // phi bounds (PHI_LOWER, PHI_UPPER)
-    {-1.0f, 1.0f},   // w_x bounds (W_X_LOWER, W_X_UPPER)
-    {-1.0f, 1.0f},   // w_y bounds (W_Y_LOWER, W_Y_UPPER)
-    {-1.5f, 1.5f},   // w_z bounds (W_Z_LOWER, W_Z_UPPER)
-    {-1.0f, 1.0f},   // p_x dynamic bounds
-    {-1.0f, 1.0f},   // p_y dynamic bounds
-    {0.0f, 1.5f},    // p_z bounds (P_Z_LOWER, P_Z_UPPER)
-    {-1.0f, 1.0f},   // v_x bounds (V_X_LOWER, V_X_UPPER)
-    {-1.0f, 1.0f},   // v_y bounds (V_Y_LOWER, V_Y_UPPER)
-    {-0.5f, 0.75f},  // v_z bounds (V_Z_LOWER, V_Z_UPPER)
-    {-1.5f, 1.5f},   // p_x_int dynamic bounds
-    {-1.5f, 1.5f},   // p_y_int dynamic bounds
-    {-0.1f, 1.5f},    // p_z_int dynamic bounds (P_Z_INT_LOWER, P_Z_INT_UPPER)
-    {-1.5f, 1.5f},   // v_x_int bounds (V_X_INT_LOWER, V_X_INT_UPPER)
-    {-1.5f, 1.5f},   // v_y_int bounds (V_Y_INT_LOWER, V_Y_INT_UPPER)
-    {-1.0f, 1.0f},   // v_z_int bounds (V_Z_INT_LOWER, V_Z_INT_UPPER)
-    {-4.0f, 4.0f},   // a_x_in_W bounds
-    {-4.0f, 4.0f},   // a_y_in_W bounds
-    {4.0f, 18.0f}    // a_z_in_W bounds
-};
-
 // Declare and initialize bounds
 static float bounds[NUM_BOUNDS][2];
 
 static int8_t bounds_violation_index = -1;
 static float bounds_violation_value = 0.0;
+static float bounds_violation_lower = 0.0; 
+static float bounds_violation_upper = 0.0;
 static uint8_t bounds_update_index = 63;
 static float bounds_update_value = 0.0;
 static uint32_t bounds_update = 4227858432;
@@ -279,11 +252,13 @@ void update_bounds(){
 void check_motor_safety(){
   // Try to enable bounds setting in flight.py #EXPIRIMENTAL#
   if (safe_to_set_motors){
-    // Dynamic Bounds
-    bounds[9][0] = default_bounds[9][0] + p_x_des; bounds[9][1] = default_bounds[9][1] +p_x_des;
-    bounds[10][0] = default_bounds[10][0] + p_y_des; bounds[10][1] = default_bounds[10][1] + p_y_des;
-    bounds[15][0] = default_bounds[15][0] + p_x_des; bounds[15][1] = default_bounds[15][1] + p_x_des;
-    bounds[16][0] = default_bounds[16][0] + p_y_des; bounds[16][1] = default_bounds[16][1] + p_y_des;
+    // Dynamic bounds fix
+    float dynamic_bounds[NUM_BOUNDS][2];
+    for(int i = 0; i < 2*NUM_BOUNDS ; dynamic_bounds[i/2][i%2] = bounds[i/2][i%2], i++);
+    dynamic_bounds[9][0] += p_x_des; dynamic_bounds[9][1] += p_x_des;
+    dynamic_bounds[10][0] += p_y_des; dynamic_bounds[10][1] += p_y_des;
+    dynamic_bounds[15][0] += p_x_des; dynamic_bounds[15][1] += p_x_des;
+    dynamic_bounds[16][0] += p_y_des; dynamic_bounds[16][1] += p_y_des;
 
     // Array of pointers to the variables being checked
     float variables[NUM_BOUNDS] = {
@@ -295,11 +270,13 @@ void check_motor_safety(){
     };
 
     // Do bounds checking
-    for (int i = 0; i < sizeof(variables) / sizeof(variables[0]); i++) {
-      if (variables[i] < bounds[i][0] || variables[i] > bounds[i][1]) {
+    for (int i = 0; i < NUM_BOUNDS; i++) {
+      if (variables[i] < dynamic_bounds[i][0] || variables[i] > dynamic_bounds[i][1]) {
           safe_to_set_motors = 0;
           bounds_violation_index = i;
           bounds_violation_value = variables[i];
+          bounds_violation_lower = dynamic_bounds[i][0];
+          bounds_violation_upper = dynamic_bounds[i][1];
       }
     }
   }
@@ -527,6 +504,8 @@ void controllerAE483(control_t *control,
     // Reset bounds setting and violation tracking
     bounds_violation_index = -1;
     bounds_violation_value = 0.0;
+    bounds_violation_lower = 0.0; 
+    bounds_violation_upper = 0.0;
     bounds_update_index = 63;
     bounds_update_value = 0.0;
     bounds_update = 4227858432;
@@ -676,6 +655,8 @@ LOG_ADD(LOG_FLOAT,       a_y_0,                  &a_y_0)
 LOG_ADD(LOG_FLOAT,       a_z_0,                  &a_z_0)
 LOG_ADD(LOG_INT8,        violation_index,        &bounds_violation_index)
 LOG_ADD(LOG_FLOAT,       violation_value,        &bounds_violation_value)
+LOG_ADD(LOG_FLOAT,       violation_lower,        &bounds_violation_lower)
+LOG_ADD(LOG_FLOAT,       violation_upper,        &bounds_violation_upper)
 LOG_ADD(LOG_FLOAT,       psi_des,                &psi_des)
 LOG_GROUP_STOP(extravars)
 
