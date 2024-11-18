@@ -464,3 +464,30 @@ def run_pulseaudio(path_to_pulse=r'/mnt/c/pulseaudio-1.1/bin/pulseaudio.exe'):
         print("Pulseaudio started")
         return process
     
+def print_outcome(data, bounds_list):
+    print('==========================================================================')
+    if data['extravars.set_motors']['data'][-1] == 0:
+        if data['extravars.violation_index']['data'][-1] != -1:
+            bound_violated = bounds_list[data['extravars.violation_index']['data'][-1]]
+            print(f"The {bound_violated} bound was violated with value {data['extravars.violation_value']['data'][-1]}")
+            print(f"The acceptable range of {bound_violated} was [{data['extravars.violation_lower']['data'][-1]}, {data['extravars.violation_upper']['data'][-1]}]")
+        else:
+            print(f"The drone did not record any bounds violation (last data was recorded at {data['extravars.violation_index']['time'][-1]}).\nTry extending the last stop command.")
+        print('\n')
+        shutoff_index = np.where((np.array(data['extravars.set_motors']['data'][:-1]) == 1) & (np.array(data['extravars.set_motors']['data'][1:]) == 0))[0][0]
+        shutoff_time = data['extravars.set_motors']['time'][shutoff_index]
+        shutoff_keys = ['m_1', 'm_2', 'm_3', 'm_4', 'p_x_des', 'p_y_des', 'p_z_des']
+        shutoff_data = []
+        for key in shutoff_keys:
+            closest_index =  np.abs(np.array(data['ae483log.'+key]['time']) - shutoff_time).argmin()
+            shutoff_data.append(data['ae483log.'+key]['data'][closest_index])
+        if np.sum(shutoff_data) != 0:
+            print(f"Drone shutoff occured during flight at {shutoff_time} seconds when the desired position was \
+                  ({shutoff_data[4]:.3f}, {shutoff_data[5]:.3f}, {shutoff_data[6]:.3f})\
+                  \nand average motor command was {np.average(shutoff_data[:4])}.")
+        else:
+            print(f"Drone shutoff occured at {shutoff_time} seconds but was on the ground or landing.\
+                  \nAt that time p_des = ({shutoff_data[4]:.3f}, {shutoff_data[5]:.3f}, {shutoff_data[6]:.3f}) and m = {np.average(shutoff_data[:4])}.")
+    else:
+        print('The drone had a "successful" flight.')
+    print('==========================================================================')

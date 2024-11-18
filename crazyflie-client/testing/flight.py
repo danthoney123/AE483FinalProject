@@ -97,6 +97,8 @@ variables = [
     'extravars.a_z_0',
     'extravars.violation_index',
     'extravars.violation_value',
+    'extravars.violation_lower',
+    'extravars.violation_upper'
     ]
 
 # Specify the IP address of the motion capture system
@@ -115,32 +117,14 @@ marker_deck_ids = [11, 12, 13, 14] # FIXME
 
 ###################################
 # CLIENT FOR CRAZYFLIE
-bounds_list = {
-    "n_x_lower": -80.0, "n_x_upper": 80.0,
-    "n_y_lower": -80.0, "n_y_upper": 80.0,
-    "r_lower": 0.0, "r_upper": 1.0,
-    "psi_lower": -1.0, "psi_upper": 1.0,
-    "theta_lower": -0.2, "theta_upper": 0.2,
-    "phi_lower": -0.2, "phi_upper": 0.2,
-    "w_x_lower": -1.0, "w_x_upper": 1.0,
-    "w_y_lower": -1.0, "w_y_upper": 1.0,
-    "w_z_lower": -1.5, "w_z_upper": 1.5,
-    "p_x_lower": -1.0, "p_x_upper": 1.0,
-    "p_y_lower": -1.0, "p_y_upper": 1.0,
-    "p_z_lower": 0.0, "p_z_upper": 1.5,
-    "v_x_lower": -1.0, "v_x_upper": 1.0,
-    "v_y_lower": -1.0,"v_y_upper": 1.0,
-    "v_z_lower": -0.5, "v_z_upper": 0.75,
-    "p_x_int_lower": -1.0, "p_x_int_upper": 1.0,
-    "p_y_int_lower": -1.0, "p_y_int_upper": 1.0,
-    "p_z_int_lower": -0.1, "p_z_int_upper": 1.5,
-    "v_x_int_lower": -1.5, "v_x_int_upper": 1.5,
-    "v_y_int_lower": -1.5, "v_y_int_upper": 1.5,
-    "v_z_int_lower": -1.0, "v_z_int_upper": 1.0,
-    "a_x_in_W_lower": -4.0, "a_x_in_W_upper": 4.0,
-    "a_y_in_W_lower": -4.0, "a_y_in_W_upper": 4.0,
-    "a_z_in_W_lower": 4.0, "a_z_in_W_upper": 18.0
-}
+bounds_list = ["n_x","n_y","r",
+               "psi","theta","phi",
+               "w_x","w_y","w_z",
+               "p_x","p_y","p_z",
+               "v_x","v_y","v_z",
+               "p_x_int", "p_y_int", "p_z_int",
+               "v_x_int", "v_y_int", "v_z_int",
+               "a_x_in_W", "a_y_in_W","a_z_in_W"]
 
 ###################################
 # FLIGHT CODE
@@ -251,39 +235,7 @@ if __name__ == '__main__':
         json.dump(data, outfile, sort_keys=False)
 
     # Report outcome of flight
-    print('==========================================================================')
-    if drone_client.data['extravars.set_motors']['data'][-1] == 0:
-        shutoff_index = np.where((np.array(drone_client.data['extravars.set_motors']['data'][:-1]) == 1) & (np.array(drone_client.data['extravars.set_motors']['data'][1:]) == 0))[0][0]
-        shutoff_time = drone_client.data['extravars.set_motors']['time'][shutoff_index]
-        shutoff_keys = ['p_z_des', 'm_1', 'm_2', 'm_3', 'm_4', 'p_x_des', 'p_y_des']
-        shutoff_data = []
-        for key in shutoff_keys:
-            closest_index =  np.abs(np.array(drone_client.data['ae483log.'+key]['time']) - shutoff_time).argmin()
-            shutoff_data.append(drone_client.data['ae483log.'+key]['data'][closest_index])
-        if np.sum(shutoff_data) != 0:
-            print(f'Drone shutoff occured during flight at {shutoff_time} seconds when p_z_des was {shutoff_data[0]} \nand average motor command was {np.average(shutoff_data[1:5])}.')
-            print(f'P_x_des was {shutoff_data[5]} and p_y_des was {shutoff_data[6]}.')
-        else:
-            print(f'Drone shutoff occured at {shutoff_time} seconds but was on the ground or landing.')
-        if drone_client.data['extravars.violation_index']['data'][-1] != -1:
-            keys_avaliable = list(bounds_list.keys())
-            bound_violated = (keys_avaliable[2*drone_client.data['extravars.violation_index']['data'][-1]]).removesuffix('_lower')
-            if bound_violated+'_lower' in BOUNDS and drone_client.set_bounds:
-                bound_lower = BOUNDS[bound_violated+'_lower']
-            else:
-                bound_lower = bounds_list[bound_violated+'_lower']
-            if bound_violated+'_upper' in BOUNDS and drone_client.set_bounds:
-                bound_upper = BOUNDS[bound_violated+'_upper']
-            else:
-                bound_upper = bounds_list[bound_violated+'_upper']
-            print('\n')
-            print(f"The {bound_violated} bound was violated with value {drone_client.data['extravars.violation_value']['data'][-1]}")
-            print(f"The acceptable range of {bound_violated} is [{bound_lower}, {bound_upper}]")
-        else:
-            print('\n')
-            print(f"The drone did not record any bounds violation (last data was recorded at {drone_client.data['extravars.violation_index']['time'][-1]}).\nTry extending the last stop command.")
-    else:
-        print('The drone had a "successful" flight.')
-    print('==========================================================================')
+    
+    print_outcome(drone_client.data, bounds_list)
             
 
