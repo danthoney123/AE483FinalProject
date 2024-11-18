@@ -17,7 +17,6 @@ from threading import Thread
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
 
-
 ###################################
 # PARAMETERS
 
@@ -139,7 +138,6 @@ if __name__ == '__main__':
     #           'p_z_lower': -0.1}
 
 
-
     # Initialize radio
     cflib.crtp.init_drivers()
 
@@ -207,7 +205,6 @@ if __name__ == '__main__':
         lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
     ]
 
-
     # Run flight commands
     for command in flight_commands:
         if(drone_client.data['extravars.set_motors']['data'][-1] == 1):
@@ -235,7 +232,6 @@ if __name__ == '__main__':
         json.dump(data, outfile, sort_keys=False)
 
     # Report outcome of flight
-    
     print_outcome(drone_client.data, bounds_list)
             
 

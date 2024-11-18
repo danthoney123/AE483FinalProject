@@ -481,7 +481,7 @@ def print_outcome(data, bounds_list):
         for key in shutoff_keys:
             closest_index =  np.abs(np.array(data['ae483log.'+key]['time']) - shutoff_time).argmin()
             shutoff_data.append(data['ae483log.'+key]['data'][closest_index])
-        if np.sum(shutoff_data) != 0:
+        if np.sum(shutoff_data[:4]) != 0:
             print(f"Drone shutoff occured during flight at {shutoff_time} seconds when the desired position was \
                   ({shutoff_data[4]:.3f}, {shutoff_data[5]:.3f}, {shutoff_data[6]:.3f})\
                   \nand average motor command was {np.average(shutoff_data[:4])}.")
