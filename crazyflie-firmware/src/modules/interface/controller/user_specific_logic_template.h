@@ -8,6 +8,35 @@
 #define J_Y               0.000023f        // principal moment of inertia about y_B axis
 #define D1D2_INIT         ((2.29967f + 0.28033f) / 100.0f)  // Initialize d1+d2 distances with a constant
 
+// Bounds Stuff
+#define NUM_BOUNDS        24 // Number of bounds variables
+static float default_bounds[NUM_BOUNDS][2] = {
+    {-80.0f, 80.0f}, // n_x bounds (N_X_LOWER, N_X_UPPER)
+    {-80.0f, 80.0f}, // n_y bounds (N_Y_LOWER, N_Y_UPPER)
+    {0.0f, 1.0f},    // r bounds (R_LOWER, R_UPPER)
+    {-1.0f, 1.0f},   // psi bounds (PSI_LOWER, PSI_UPPER)
+    {-0.2f, 0.2f},   // theta bounds (THETA_LOWER, THETA_UPPER)
+    {-0.2f, 0.2f},   // phi bounds (PHI_LOWER, PHI_UPPER)
+    {-1.0f, 1.0f},   // w_x bounds (W_X_LOWER, W_X_UPPER)
+    {-1.0f, 1.0f},   // w_y bounds (W_Y_LOWER, W_Y_UPPER)
+    {-1.5f, 1.5f},   // w_z bounds (W_Z_LOWER, W_Z_UPPER)
+    {-1.0f, 1.0f},   // p_x dynamic bounds
+    {-1.0f, 1.0f},   // p_y dynamic bounds
+    {0.0f, 1.5f},    // p_z bounds (P_Z_LOWER, P_Z_UPPER)
+    {-1.0f, 1.0f},   // v_x bounds (V_X_LOWER, V_X_UPPER)
+    {-1.0f, 1.0f},   // v_y bounds (V_Y_LOWER, V_Y_UPPER)
+    {-0.5f, 0.75f},  // v_z bounds (V_Z_LOWER, V_Z_UPPER)
+    {-1.5f, 1.5f},   // p_x_int dynamic bounds
+    {-1.5f, 1.5f},   // p_y_int dynamic bounds
+    {-0.1f, 1.5f},    // p_z_int dynamic bounds (P_Z_INT_LOWER, P_Z_INT_UPPER)
+    {-1.5f, 1.5f},   // v_x_int bounds (V_X_INT_LOWER, V_X_INT_UPPER)
+    {-1.5f, 1.5f},   // v_y_int bounds (V_Y_INT_LOWER, V_Y_INT_UPPER)
+    {-1.0f, 1.0f},   // v_z_int bounds (V_Z_INT_LOWER, V_Z_INT_UPPER)
+    {-4.0f, 4.0f},   // a_x_in_W bounds
+    {-4.0f, 4.0f},   // a_y_in_W bounds
+    {4.0f, 18.0f}    // a_z_in_W bounds
+};
+
 // FIXME REPLACE WITH YOUR OWN OBSERVER AND CONTROLLER
 // State estimates (this logic will be inserted at each location where STATE_ESTIMATION_X is used)
 // Observer without mocap or LED Deck (Lab 7)
