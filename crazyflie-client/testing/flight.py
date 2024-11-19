@@ -106,13 +106,13 @@ ip_address = '128.174.245.190' # FIXME
 # Specify the name of the rigid body that corresponds to your active marker
 # deck in the motion capture system. If your marker deck number is X, this name
 # should be 'marker_deck_X'.
-marker_deck_name = 'marker_deck_10' # <-- FIXME
+marker_deck_name = 'marker_deck_30' # <-- FIXME
 
 # Specify the marker IDs that correspond to your active marker deck in the
 # motion capture system. If your marker deck number is X, these IDs should be
 # [X + 1, X + 2, X + 3, X + 4]. They are listed in clockwise order (viewed
 # top-down), starting from the front.
-marker_deck_ids = [11, 12, 13, 14] # FIXME
+marker_deck_ids = [31, 32, 33, 34] # FIXME
 
 ###################################
 # CLIENT FOR CRAZYFLIE
