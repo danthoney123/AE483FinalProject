@@ -161,8 +161,10 @@ if __name__ == '__main__':
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
         set_bounds=True, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
+        bounds_list=bounds_list,
         marker_deck_ids=marker_deck_ids if use_mocap else None,
-        filename='hardware_data'
+        filename='hardware_data',
+        variables=variables
     )
 
     # Wait until the client is fully connected to the drone
@@ -199,10 +201,8 @@ if __name__ == '__main__':
         lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
         lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
         lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
-        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 180, "G"], t=2.0),
-        lambda: drone_client.move_frame([-2.5, 0, 0.6, 180, "G"], [-2.5, 0, 0.6, 0, "G"], t=2.0),
-        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
-        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
+        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 0, "W"], t=5.0),
+        lambda: drone_client.move_frame([0.0, 0, 0.5, 0, "W"], [0.0, 0, 0.0, 0, "W"], t=2.0)
     ]
 
     # Run flight commands

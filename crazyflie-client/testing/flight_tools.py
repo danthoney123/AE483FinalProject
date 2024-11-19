@@ -142,10 +142,18 @@ class CrazyflieClient:
 
         if self.set_bounds:
             for key in self.bounds.keys():
-                keys_avaliable = list(self.bounds_list.keys())
-                print(f'Setting new bound for {key} at index {keys_avaliable.index(key)}')
+                stripped_key = key[:-6]
+                half_index = self.bounds_list.index(stripped_key)
+                if key[-6:] == '_lower':
+                    index = 2*half_index + 0
+                elif key[-6:] == '_upper':
+                    index = 2*half_index + 1
+                else:
+                    print(f'{key} name impropertly formatted. Skipping Key.')
+                    continue
+                print(f'Setting new bound for {key} at index {index}')
                 self.cf.param.add_update_callback(group='ae483par', name='bounds_update', cb=param_callback)
-                self.cf.param.set_value('ae483par.bounds_update', self.float_to_custom(keys_avaliable.index(key), self.bounds[key]))
+                self.cf.param.set_value('ae483par.bounds_update', self.float_to_custom(index, self.bounds[key]))
                 time.sleep(0.1) # Give time for controller to update value
 
         # Start logging
