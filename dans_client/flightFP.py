@@ -524,7 +524,7 @@ if __name__ == '__main__':
     drone_client = CrazyflieClient(
         uri,
         use_controller=True,
-        use_observer=False,
+        use_observer=True,
         use_safety=False,
         use_mocap=use_mocap,
         set_bounds=False,
@@ -563,7 +563,7 @@ if __name__ == '__main__':
     ## Flight code here!
     flight_commands = [
         # short hop
-        lambda: drone_client.move(0.0, 0.0, 0.2, 0.0, 2.0),
+        lambda: drone_client.move(0.0, 0.0, 0.5, 0.0, 10.0),
         # lambda: drone_client.move_smooth([0.0, 0.0, 0.2], [0.0, 0.0, 0.5], 0.0, 0.2),
         #lambda: drone_client.stop(5)
 
@@ -613,7 +613,7 @@ if __name__ == '__main__':
     data['mocap'] = mocap_client.data if use_mocap else {}
 
     # Write flight data to a file
-    with open('../crazyflie-client/FinalProject/flight_test_01.json', 'w') as outfile:
+    with open('hover_01', 'w') as outfile:
         json.dump(data, outfile, sort_keys=False)
 
     # Report outcome of flight
