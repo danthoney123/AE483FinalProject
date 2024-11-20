@@ -10,6 +10,7 @@ import numpy as np
 import cflib.crtp
 from multiprocessing import SimpleQueue
 import cflib.crazyflie.mem.led_driver_memory as LEDLib 
+from cflib.utils.power_switch import PowerSwitch
 
 # Imports for qualisys (the motion capture system)
 from threading import Thread
@@ -19,10 +20,6 @@ logging.basicConfig(level=logging.ERROR)
 
 ###################################
 # PARAMETERS
-
-# Specify the uri of the drone to which you want to connect (if your radio
-# channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
-uri = 'radio://0/32/2M/E7E7E7E7E7' # <-- FIXME
 
 # Specify the variables you want to log at 100 Hz from the drone
 variables = [
@@ -99,6 +96,10 @@ variables = [
     'extravars.violation_lower',
     'extravars.violation_upper'
     ]
+# Specify the uri of the drone to which you want to connect (if your radio
+# channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
+uri = 'radio://0/32/2M/E7E7E7E7E7' # <-- FIXME
+# uri = 'radio://0/16/2M/E7E7E7E7E7'
 
 # Specify the IP address of the motion capture system
 ip_address = '128.174.245.190' # FIXME
@@ -107,12 +108,14 @@ ip_address = '128.174.245.190' # FIXME
 # deck in the motion capture system. If your marker deck number is X, this name
 # should be 'marker_deck_X'.
 marker_deck_name = 'marker_deck_30' # <-- FIXME
+# marker_deck_name = 'marker_deck_10'
 
 # Specify the marker IDs that correspond to your active marker deck in the
 # motion capture system. If your marker deck number is X, these IDs should be
 # [X + 1, X + 2, X + 3, X + 4]. They are listed in clockwise order (viewed
 # top-down), starting from the front.
 marker_deck_ids = [31, 32, 33, 34] # FIXME
+# marker_deck_ids = [11, 13, 13, 14]
 
 ###################################
 # CLIENT FOR CRAZYFLIE
@@ -130,6 +133,10 @@ bounds_list = ["n_x","n_y","r",
 # FLIGHT CODE
 
 if __name__ == '__main__':
+    print(f'Rebooting drone')
+    PowerSwitch(uri).stm_power_cycle()
+    time.sleep(5)
+
     # Specify whether or not to use the motion capture system
     use_mocap = True
 
@@ -160,7 +167,7 @@ if __name__ == '__main__':
         use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
-        set_bounds=True, ### Sends custom bounds to update the defaults
+        set_bounds=False, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         bounds_list=bounds_list,
         marker_deck_ids=marker_deck_ids if use_mocap else None,
@@ -182,14 +189,10 @@ if __name__ == '__main__':
 
     # Pause to initiate controller processing
     drone_client.stop(0.1)
-    if drone_client.set_bounds:
-        print('Waiting for bounds to be recieved before flight:')
-        while(drone_client.params_sent < len(BOUNDS) and drone_client.set_bounds):
-            time.sleep(0.1)
-        print('All bounds recieved, proceeding.')
-    else:
-        time.sleep(2.0)
-        print('No bounds to send, proceeding.')
+    print('Waiting for parameters to be recieved before flight:')
+    while(drone_client.params_recieved < drone_client.params_sent):
+        time.sleep(0.1)
+    print('All bounds recieved, proceeding.')
 
     # Find offset 
     drone_client.initialize_offset(mocap_obj=mocap_client)
@@ -199,11 +202,13 @@ if __name__ == '__main__':
         # Demo flight of the move_frame functionS
         lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0),
         lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=2.0),
-        lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
+        # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
         lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
         lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
-        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 0, "W"], t=5.0),
-        lambda: drone_client.move_frame([0.0, 0, 0.5, 0, "W"], [0.0, 0, 0.0, 0, "W"], t=2.0)
+        # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 0, "G"], t=5.0),
+        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 135, "G"], t=10.0),
+        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
+        # lambda: drone_client.move_frame([0.0, 0, 0.5, 0, "W"], [0.0, 0, 0.0, 0, "W"], t=2.0)
     ]
 
     # Run flight commands

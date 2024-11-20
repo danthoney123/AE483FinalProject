@@ -43,6 +43,7 @@ class CrazyflieClient:
         self.is_fully_connected = False
         self.data = {}
         self.params_sent = 0
+        self.params_recieved = 0
         self.offset = [0, 0, 0, 0]
         self.filename=filename
         self.bounds_list = bounds_list
@@ -72,6 +73,10 @@ class CrazyflieClient:
         print(f'CrazyflieClient: Connected to {uri}')
     
     def _fully_connected(self, uri):
+        def param_callback(name, value):
+            print(f'Parameter {name} recieved with value {value}.')
+            self.params_recieved += 1
+
         if self.marker_deck_ids is not None:
             print(f'CrazyflieClient: Using active marker deck with IDs {self.marker_deck_ids}')
 
@@ -87,9 +92,13 @@ class CrazyflieClient:
         # Set which estimator is being used! Very important AAAAA
         print('Using LED Deck Setting Estimator')
         if self.use_LED:
+            self.cf.param.add_update_callback(group='stabilizer', name='estimator', cb=param_callback)
             self.cf.param.set_value('stabilizer.estimator', 2)
+            self.params_sent += 1
         else:
+            self.cf.param.add_update_callback(group='stabilizer', name='estimator', cb=param_callback)
             self.cf.param.set_value('stabilizer.estimator', 1)
+            self.params_sent += 1
 
         # Reset the default observer
         self.cf.param.set_value('kalman.resetEstimation', 1)
@@ -97,47 +106,68 @@ class CrazyflieClient:
         self.cf.param.set_value('kalman.resetEstimation', 0)
         
         # Reset the ae483 observer, safety bounds, and backup state estimation
+        self.cf.param.add_update_callback(group='ae483par', name='reset', cb=param_callback)
         self.cf.param.set_value('ae483par.reset', 1)
+        self.params_sent += 1
         print('Reset Called')
 
         # Set use mocap
         if self.use_mocap:
+            self.cf.param.add_update_callback(group='ae483par', name='use_mocap', cb=param_callback)
             self.cf.param.set_value('ae483par.use_mocap', 1)
+            self.params_sent += 1 
         else:
+            self.cf.param.add_update_callback(group='ae483par', name='use_mocap', cb=param_callback)
             self.cf.param.set_value('ae483par.use_mocap', 0)
+            self.params_sent += 1
         print('Setting mocap')
 
         if self.use_LED:
+            self.cf.param.add_update_callback(group='ae483par', name='use_LED', cb=param_callback)
             self.cf.param.set_value('ae483par.use_LED', 1)
+            self.params_sent += 1
         else:
+            self.cf.param.add_update_callback(group='ae483par', name='use_LED', cb=param_callback)
             self.cf.param.set_value('ae483par.use_LED', 0)
+            self.params_sent += 1
+
         print('Setting LED Deck')
 
         if self.use_safety:
+            self.cf.param.add_update_callback(group='ae483par', name='use_safety', cb=param_callback)
             self.cf.param.set_value('ae483par.use_safety', 1)
+            self.params_sent += 1
             print('Turning safety on.')
         else:
+            self.cf.param.add_update_callback(group='ae483par', name='use_safety', cb=param_callback)
             self.cf.param.set_value('ae483par.use_safety', 0)
+            self.params_sent += 1
             print('Turned safety off, watch out everyone!')
 
         # Reset the ae483 safe_to_set_motors value. Thank you for using safety features!
+        self.cf.param.add_update_callback(group='ae483par', name='set_motors', cb=param_callback)
         self.cf.param.set_value('ae483par.set_motors', 1)
+        self.params_sent += 1
         time.sleep(0.1)
         
         # Enable the controller (1 for default, 6 for ae483)
         if self.use_controller:
+            self.cf.param.add_update_callback(group='stabilizer', name='controller', cb=param_callback)
             self.cf.param.set_value('stabilizer.controller', 6)
+            self.params_sent += 1
         else:
+            self.cf.param.add_update_callback(group='stabilizer', name='controller', cb=param_callback)
             self.cf.param.set_value('stabilizer.controller', 1)
+            self.params_sent += 1
 
         # Enable the observer (0 for disable, 1 for enable)
         if self.use_observer:
+            self.cf.param.add_update_callback(group='ae483par', name='use_observer', cb=param_callback)
             self.cf.param.set_value('ae483par.use_observer', 1)
+            self.params_sent += 1
         else:
+            self.cf.param.add_update_callback(group='ae483par', name='use_observer', cb=param_callback)
             self.cf.param.set_value('ae483par.use_observer', 0)
-
-        def param_callback(name, value):
-            print(f'Parameter {name} recieved with value {value}.')
             self.params_sent += 1
 
         if self.set_bounds:
@@ -154,6 +184,7 @@ class CrazyflieClient:
                 print(f'Setting new bound for {key} at index {index}')
                 self.cf.param.add_update_callback(group='ae483par', name='bounds_update', cb=param_callback)
                 self.cf.param.set_value('ae483par.bounds_update', self.float_to_custom(index, self.bounds[key]))
+                self.params_sent += 1
                 time.sleep(0.1) # Give time for controller to update value
 
         # Start logging
@@ -490,7 +521,7 @@ def print_outcome(data, bounds_list):
             closest_index =  np.abs(np.array(data['ae483log.'+key]['time']) - shutoff_time).argmin()
             shutoff_data.append(data['ae483log.'+key]['data'][closest_index])
         if np.sum(shutoff_data[:4]) != 0:
-            print(f"Drone shutoff occured during flight at {shutoff_time} seconds when the desired position was \
+            print(f"Drone shutoff occured during flight at {shutoff_time} seconds when the desired position was\
                   ({shutoff_data[4]:.3f}, {shutoff_data[5]:.3f}, {shutoff_data[6]:.3f})\
                   \nand average motor command was {np.average(shutoff_data[:4])}.")
         else:

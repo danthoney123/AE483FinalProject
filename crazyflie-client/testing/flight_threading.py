@@ -114,11 +114,11 @@ ip_address = '128.174.245.190' # FIXME
 marker_deck_name = 'marker_deck_30' # <-- FIXME
 marker_deck_name_list = [
     'marker_deck_30',
-    'marker_deck_10'
+    'marker_deck_40'
 ]
 marker_deck_ids_list = [
     [31, 32, 33, 34],
-    [11, 12, 13, 14]
+    [41, 42, 43, 44]
 ]
 
 # Specify the marker IDs that correspond to your active marker deck in the
@@ -184,7 +184,7 @@ if __name__ == '__main__':
             use_safety=True, ### Disable at your own risk
             use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
             use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
-            set_bounds=True, ### Sends custom bounds to update the defaults
+            set_bounds=False, ### Sends custom bounds to update the defaults
             bounds = BOUNDS,
             bounds_list=bounds_list,
             marker_deck_ids=marker_deck_ids_list[i] if use_mocap else None,
@@ -205,14 +205,10 @@ if __name__ == '__main__':
 
         # Pause to initiate controller processing
         drone_client.stop(0.1)
-        if drone_client.set_bounds:
-            print('Waiting for bounds to be recieved before flight:')
-            while(drone_client.params_sent < len(BOUNDS) and drone_client.set_bounds):
-                time.sleep(0.1)
-            print('All bounds recieved, proceeding.')
-        else:
-            time.sleep(2.0)
-            print('No bounds to send, proceeding.')
+        print('Waiting for parameters to be recieved before flight:')
+        while(drone_client.params_recieved < drone_client.params_sent):
+            time.sleep(0.1)
+        print('All bounds recieved, proceeding.')
 
         # Find offset 
         drone_client.initialize_offset(mocap_obj=mocap_client)
