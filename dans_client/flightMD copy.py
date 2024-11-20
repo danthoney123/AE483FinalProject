@@ -11,7 +11,6 @@ import cflib.crtp
 from multiprocessing import SimpleQueue
 import cflib.crazyflie.mem.led_driver_memory as LEDLib 
 from threading import Thread
-from threading import Lock
 
 # Imports for qualisys (the motion capture system)
 from threading import Thread
@@ -22,8 +21,6 @@ logging.basicConfig(level=logging.ERROR)
 
 ###################################
 # PARAMETERS
-
-shared_lock = Lock()
 
 # Specify the uri of the drone to which you want to connect (if your radio
 # channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
@@ -192,7 +189,7 @@ if __name__ == '__main__':
     if use_mocap:
         for drone_client in drone_clients:
             pose_queue = SimpleQueue()
-            Thread(target=send_poses, args=(drone_client, pose_queue, shared_lock)).start()
+            Thread(target=send_poses, args=(drone_client, pose_queue)).start()
             mocap_clients.append(QualisysClient(ip_address, "marker_deck_" + str(drone_client.marker_deck_ids[0] - 1), pose_queue))
     else:
         mocap_clients = []
@@ -213,11 +210,12 @@ if __name__ == '__main__':
         drone_client.initialize_offset(mocap_obj=mocap_clients[i])
 
     ## Flight code here!
-    def getFlightCommands():
+    def getFlightCommands(dcs):
+        drone_client = dcs[0]
         flight_commands_1 = [
             # Demo flight of the move_frame functionS
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=1.0, lock=shared_lock),
+            lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0),
+            # lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=1.0),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
@@ -226,10 +224,11 @@ if __name__ == '__main__':
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
         ]
+        drone_client = dcs[1]
         flight_commands_2 = [
             # Demo flight of the move_frame functionS
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=1.0, lock=shared_lock),
+            lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0),
+            # lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=1.0),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
@@ -238,27 +237,23 @@ if __name__ == '__main__':
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
         ]
-        return [flight_commands_1, flight_commands_2]
+        return flight_commands_1, flight_commands_2
 
-
-    def drone_thread(drone_client, flight_commands, lock):
+    def drone_thread(drone_client, flight_commands):
         for command in flight_commands:
             if(drone_client.data['extravars.set_motors']['data'][-1] == 1):
-                #with lock:
-                command(drone_client)
+                command()
             else:
                 break  
 
-    allfcs = getFlightCommands()
-    flight_commands_1 = allfcs[0]
-    flight_commands_2 = allfcs[1]
 
+    flight_commands_1, flight_commands_2 = getFlightCommands(drone_clients)
     threads = []
-    t1 = Thread(target=drone_thread, args=(drone_client_1, flight_commands_1, shared_lock))
+    t1 = Thread(target=drone_thread, args=(drone_client_1, flight_commands_1))
     t1.start()
     threads.append(t1)
 
-    t2 = Thread(target=drone_thread, args=(drone_client_2, flight_commands_2, shared_lock))
+    t2 = Thread(target=drone_thread, args=(drone_client_2, flight_commands_2))
     t2.start()
     threads.append(t2)
 

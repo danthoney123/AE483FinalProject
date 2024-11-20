@@ -164,7 +164,7 @@ if __name__ == '__main__':
         uri,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=True, ### Disable at your own risk
+        use_safety=False, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
         set_bounds=False, ### Sends custom bounds to update the defaults

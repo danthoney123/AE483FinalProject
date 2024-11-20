@@ -18,6 +18,7 @@ from scipy.spatial.transform import Rotation
 # Other imports
 import pygame
 import subprocess
+from threading import Lock
 
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
@@ -291,7 +292,7 @@ class CrazyflieClient:
             else:
                 time.sleep(0.1)
 
-    def move_frame(self, p_1, p_2, t):
+    def move_frame(self, p_1, p_2, t, lock):
         # New smooth move command with format pX = [x, y, z, psi [degrees!!!!!!!!], "Frame"]
         print(f'Move smoothly from {p_1} to {p_2} in {t} seconds.')
         pos_1 = np.array(p_1[:3])
@@ -327,7 +328,8 @@ class CrazyflieClient:
             current_time = time.time() - start_time
             pos_des = current_time*v + pos_1_Q
             psi_des = current_time*w + psi_1_Q
-            self.cf.commander.send_position_setpoint(pos_des[0], pos_des[1], pos_des[2], psi_des)
+            with lock:
+                self.cf.commander.send_position_setpoint(pos_des[0], pos_des[1], pos_des[2], psi_des)
             time.sleep(0.1)
       
     def initialize_offset(self, mocap_obj=None):
@@ -457,7 +459,7 @@ class QualisysClient(Thread):
         await self.connection.stream_frames_stop()
         self.connection.disconnect()
 
-def send_poses(client, queue):
+def send_poses(client, queue, lock):
     print('Start sending poses')
     while True:
         pose = queue.get()
@@ -465,7 +467,8 @@ def send_poses(client, queue):
             print('Stop sending poses')
             break
         x, y, z, qx, qy, qz, qw = pose
-        client.cf.extpos.send_extpose(x, y, z, qx, qy, qz, qw)
+        with lock:
+            client.cf.extpos.send_extpose(x, y, z, qx, qy, qz, qw)
         # print(f'Sending {pose}')
 
 
