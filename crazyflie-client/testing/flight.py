@@ -123,7 +123,8 @@ bounds_list = ["n_x","n_y","r",
                "v_x","v_y","v_z",
                "p_x_int", "p_y_int", "p_z_int",
                "v_x_int", "v_y_int", "v_z_int",
-               "a_x_in_W", "a_y_in_W","a_z_in_W"]
+               "a_x_in_W", "a_y_in_W","a_z_in_W",
+               "flow_age", "r_age", "mocap_age"]
 
 ###################################
 # FLIGHT CODE
