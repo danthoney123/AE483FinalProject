@@ -531,9 +531,33 @@ def print_outcome(data, bounds_list):
         print('The drone had a "successful" flight.')
     print('==========================================================================')
 
-async def test_markerdeck_scan(ip_address):
-    connection = await qtm.connect(ip_address, version="1.24")
-    params = await connection.get_parameeters(parameters=['6d'])
-    xml = ET.fromstring(params)
-    qtm_6DoF_labels = [label.text.strip() for index, label in enumerate(xml.findall('*/Body/Name'))]
-    print(qtm_6DoF_labels)
+class MarkerdeckScan():
+    def __init__(self):
+        self.qtm_6DoF_labels = []
+
+    async def markerdeck_scan(self, ip_address):
+        connection = await qtm.connect(ip_address, version="1.24")
+        params = await connection.get_parameters(parameters=['6d'])
+        xml = ET.fromstring(params)
+        self.qtm_6DoF_labels = [label.text.strip() for index, label in enumerate(xml.findall('*/Body/Name'))]
+        # for name in self.qtm_6DoF_labels:
+        #     print(name)
+        await connection.stream_frames(
+            components=['6d'],
+            on_packet=self.test_on_packet,
+        )
+    def _on_packet(self, packet):
+        header, bodies = packet.get_6d()
+        if bodies is None:
+            print(f'QualisysClient: No rigid bodies found')
+            return
+        t = packet.timestamp / 1e6
+        print(f'The mocap time is {t} sec')
+        for i, name in enumerate(self.qtm_6DoF_labels):
+            position, orientation = bodies[i]
+            x, y, z = np.array(position) / 1e3
+            if np.isfinite(x):
+                print(f'{name} is in use with position ({x:.3f}, {y:.3f}, {z:.3f}).')
+            else:
+                print(f'{name} may not be in use.')
+        
