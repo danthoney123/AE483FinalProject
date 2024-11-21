@@ -530,3 +530,10 @@ def print_outcome(data, bounds_list):
     else:
         print('The drone had a "successful" flight.')
     print('==========================================================================')
+
+async def test_markerdeck_scan(ip_address):
+    connection = await qtm.connect(ip_address, version="1.24")
+    params = await connection.get_parameeters(parameters=['6d'])
+    xml = ET.fromstring(params)
+    qtm_6DoF_labels = [label.text.strip() for index, label in enumerate(xml.findall('*/Body/Name'))]
+    print(qtm_6DoF_labels)
