@@ -548,7 +548,7 @@ class MarkerdeckScan():
         #     print(name)
         await connection.stream_frames(
             components=['6d'],
-            on_packet=self.test_on_packet,
+            on_packet=self._on_packet,
         )
     def _on_packet(self, packet):
         header, bodies = packet.get_6d()

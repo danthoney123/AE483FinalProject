@@ -98,7 +98,7 @@ variables = [
     ]
 # Specify the uri of the drone to which you want to connect (if your radio
 # channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
-uri = 'radio://0/32/2M/E7E7E7E7E7' # <-- FIXME
+uri = 'radio://0/32/2M/E7E7E7E7E8' # <-- FIXME
 # uri = 'radio://0/16/2M/E7E7E7E7E7'
 
 # Specify the IP address of the motion capture system
@@ -164,7 +164,7 @@ if __name__ == '__main__':
         uri,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=True, ### Disable at your own risk
+        use_safety=False, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
         set_bounds=False, ### Sends custom bounds to update the defaults
@@ -200,13 +200,13 @@ if __name__ == '__main__':
     ## Flight code here!
     flight_commands = [
         # Demo flight of the move_frame functionS
-        lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0),
-        lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=2.0),
+        lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=1.0),
+        # lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=2.0),
         # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
         lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
         lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
         # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 0, "G"], t=5.0),
-        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 135, "G"], t=10.0),
+        # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 135, "G"], t=10.0),
         lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
         # lambda: drone_client.move_frame([0.0, 0, 0.5, 0, "W"], [0.0, 0, 0.0, 0, "W"], t=2.0)
     ]
