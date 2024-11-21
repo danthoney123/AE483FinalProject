@@ -1,1 +1,2 @@
 crazyflie-firmware/src/modules/interface/controller/user_specific_logic.h
+crazyflie-client/*.json
