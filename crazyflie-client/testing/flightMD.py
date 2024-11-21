@@ -216,8 +216,8 @@ if __name__ == '__main__':
     def getFlightCommands():
         flight_commands_1 = [
             # Demo flight of the move_frame functionS
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=1.0, lock=shared_lock),
+            # lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.0, 0, "W"], [0, 0, 0.5, 0, "W"], t=1.0, lock=shared_lock),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
@@ -228,8 +228,8 @@ if __name__ == '__main__':
         ]
         flight_commands_2 = [
             # Demo flight of the move_frame functionS
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=1.0, lock=shared_lock),
+            # lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.0, 0, "W"], [0, 0, 0.5, 0, "W"], t=1.0, lock=shared_lock),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
