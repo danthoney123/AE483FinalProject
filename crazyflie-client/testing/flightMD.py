@@ -27,7 +27,7 @@ shared_lock = Lock()
 
 # Specify the uri of the drone to which you want to connect (if your radio
 # channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
-uri_1 = 'radio://0/16/2M/E7E7E7E7E7' # <-- FIXME
+uri_1 = 'radio://0/32/2M/E7E7E7E7E8' # <-- FIXME
 uri_2 = 'radio://0/32/2M/E7E7E7E7E7'
 
 # Specify the variables you want to log at 100 Hz from the drone
@@ -160,7 +160,7 @@ if __name__ == '__main__':
         use_safety=False, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
-        set_bounds=False, ### Sends custom bounds to update the defaults
+        set_bounds=True, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         marker_deck_ids=marker_deck_ids_1 if use_mocap else None,
         filename='md_flight_test_D1',
@@ -171,7 +171,7 @@ if __name__ == '__main__':
         uri_2,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=False, ### Disable at your own risk
+        use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
         set_bounds=False, ### Sends custom bounds to update the defaults

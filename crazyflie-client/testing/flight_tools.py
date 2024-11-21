@@ -328,8 +328,8 @@ class CrazyflieClient:
             current_time = time.time() - start_time
             pos_des = current_time*v + pos_1_Q
             psi_des = current_time*w + psi_1_Q
-            with lock:
-                self.cf.commander.send_position_setpoint(pos_des[0], pos_des[1], pos_des[2], psi_des)
+            # with lock:
+            self.cf.commander.send_position_setpoint(pos_des[0], pos_des[1], pos_des[2], psi_des)
             time.sleep(0.1)
       
     def initialize_offset(self, mocap_obj=None):
@@ -467,8 +467,8 @@ def send_poses(client, queue, lock):
             print('Stop sending poses')
             break
         x, y, z, qx, qy, qz, qw = pose
-        with lock:
-            client.cf.extpos.send_extpose(x, y, z, qx, qy, qz, qw)
+        # with lock:
+        client.cf.extpos.send_extpose(x, y, z, qx, qy, qz, qw)
         # print(f'Sending {pose}')
 
 
