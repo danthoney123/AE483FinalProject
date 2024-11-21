@@ -187,6 +187,10 @@ class CrazyflieClient:
                 self.params_sent += 1
                 time.sleep(0.1) # Give time for controller to update value
 
+        self.cf.param.add_update_callback(group='ring', name='effect', cb=param_callback)
+        self.cf.param.set_value('ring.effect', 0) # Turn LED off to save power
+        self.params_sent += 1
+
         # Start logging
         self.logconfs = []
         self.logconfs.append(LogConfig(name=f'LogConf0', period_in_ms=10))
