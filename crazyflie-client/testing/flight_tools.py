@@ -97,7 +97,7 @@ class CrazyflieClient:
             self.params_sent += 1
         else:
             self.cf.param.add_update_callback(group='stabilizer', name='estimator', cb=param_callback)
-            self.cf.param.set_value('stabilizer.estimator', 1)
+            self.cf.param.set_value('stabilizer.estimator', 0)
             self.params_sent += 1
 
         # Reset the default observer

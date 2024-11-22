@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.ERROR)
 uri = 'radio://0/32/2M/E7E7E7E7E7' # <-- FIXME
 uri_list = [
     'radio://0/32/2M/E7E7E7E7E7',
-    'radio://0/16/2M/E7E7E7E7E7'
+    'radio://0/32/2M/E7E7E7E7E8'
 ]
 
 # Specify the variables you want to log at 100 Hz from the drone
