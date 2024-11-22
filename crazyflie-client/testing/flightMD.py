@@ -1,6 +1,7 @@
 ###################################
 # IMPORTS
 from flight_tools import *
+from cflib.utils.power_switch import PowerSwitch
 
 # Imports for crazyflie (the drone)
 import logging
@@ -29,6 +30,7 @@ shared_lock = Lock()
 # channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
 uri_1 = 'radio://0/32/2M/E7E7E7E7E8' # <-- FIXME
 uri_2 = 'radio://0/32/2M/E7E7E7E7E7'
+
 
 # Specify the variables you want to log at 100 Hz from the drone
 variables = [
@@ -130,6 +132,11 @@ bounds_list = ["n_x","n_y","r",
 # FLIGHT CODE
 
 if __name__ == '__main__':
+
+    print(f'Rebooting drones')
+    PowerSwitch(uri_1).stm_power_cycle()
+    PowerSwitch(uri_2).stm_power_cycle()
+    time.sleep(5)
     # Specify whether or not to use the motion capture system
     use_mocap = True
 
@@ -212,8 +219,8 @@ if __name__ == '__main__':
         flight_commands_1 = [
             # Demo flight of the move_frame functionS
             lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=2.0, lock=shared_lock),
-            # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
+            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=5.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
             # # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 180, "G"], t=2.0),
@@ -224,7 +231,8 @@ if __name__ == '__main__':
         flight_commands_2 = [
             # Demo flight of the move_frame functionS
             lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=2.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=5.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
