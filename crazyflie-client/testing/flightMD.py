@@ -164,7 +164,7 @@ if __name__ == '__main__':
         uri_1,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=True, ### Disable at your own risk
+        use_safety=False, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
         set_bounds=False, ### Sends custom bounds to update the defaults
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         uri_2,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=True, ### Disable at your own risk
+        use_safety=False, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
         set_bounds=False, ### Sends custom bounds to update the defaults
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     if use_mocap:
         for drone_client in drone_clients:
             pose_queue = SimpleQueue()
-            Thread(target=send_poses, args=(drone_client, pose_queue, shared_lock)).start()
+            Thread(target=send_poses, args=(drone_client, pose_queue)).start()
             mocap_clients.append(QualisysClient(ip_address, "marker_deck_" + str(drone_client.marker_deck_ids[0] - 1), pose_queue))
     else:
         mocap_clients = []
@@ -218,9 +218,11 @@ if __name__ == '__main__':
     def getFlightCommands():
         flight_commands_1 = [
             # Demo flight of the move_frame functionS
+            lambda dc: dc.stop(10),
             lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=5.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 1.0, 0, "W"], t=60.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
+
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
             # # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 180, "G"], t=2.0),
@@ -230,9 +232,11 @@ if __name__ == '__main__':
         ]
         flight_commands_2 = [
             # Demo flight of the move_frame functionS
+            lambda dc: dc.stop(10),
             lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=5.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 1.0, 0, "W"], t=60.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
+
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
@@ -258,12 +262,18 @@ if __name__ == '__main__':
 
     threads = []
     t1 = Thread(target=drone_thread, args=(drone_client_1, flight_commands_1, shared_lock))
+    mt1 = Thread(target=play_song, args=(drone_client_1, ))
     t1.start()
+    mt1.start()
     threads.append(t1)
+    threads.append(mt1)
 
     t2 = Thread(target=drone_thread, args=(drone_client_2, flight_commands_2, shared_lock))
+    mt2 = Thread(target=play_song, args=(drone_client_2, ))
     t2.start()
+    mt2.start()
     threads.append(t2)
+    threads.append(mt2)
 
     for t in threads:
         t.join()

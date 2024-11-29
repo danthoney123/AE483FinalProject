@@ -7,6 +7,7 @@ from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.log import LogConfig
 import struct
 import os
+import cflib.crazyflie.mem.led_driver_memory as LEDLib 
 
 # Imports for qualisys (the motion capture system)
 import asyncio
@@ -19,6 +20,9 @@ from scipy.spatial.transform import Rotation
 import pygame
 import subprocess
 from threading import Lock
+import ast  # For safely evaluating tuples in string form
+import csv
+import atexit
 
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
@@ -459,7 +463,7 @@ class QualisysClient(Thread):
         await self.connection.stream_frames_stop()
         self.connection.disconnect()
 
-def send_poses(client, queue, lock):
+def send_poses(client, queue):
     print('Start sending poses')
     while True:
         pose = queue.get()
@@ -533,3 +537,57 @@ def print_outcome(data, bounds_list):
     else:
         print('The drone had a "successful" flight.')
     print('==========================================================================')
+
+def play_song(drone_client): 
+    ####################### LED Driver Setup ############################    
+    memory = drone_client.cf.mem
+    drone_client.cf.param.set_value('ring.effect', 13)
+    leds_driver = LEDLib.LEDDriverMemory(id=4, type='LED driver', size=24, mem_handler=memory)
+################### Import LED Program ###############################
+    # Initialize lists for times and LED states
+    times = []
+    led_data = []
+    # Read the CSV file with correct parsing
+    with open("bad_apple_program.csv", mode='r') as file:
+        reader = csv.reader(file)
+        headers = next(reader)  # Skip headers
+        for row in reader:
+            # Extract time (last column) and convert to float
+            time_instance = float(row[-1])
+            # Extract LED data (all columns except the last) and convert each string to an RGB tuple
+            led_row = [ast.literal_eval(led) for led in row[:-1]]
+            # Append to respective lists
+            times.append(time_instance)
+            led_data.append(led_row)
+
+########################### Run the show ############################
+    # Start pulseaudio for windows capture of audio output
+    pulseaudio_process = run_pulseaudio()
+
+    # Play the music and send LED lights
+    get_music_time, stop_music, is_playing = play_music("bad_apple.mp3")
+    last_led_index = -1
+    start_time = time.time()
+    first_light_time = 0
+    while (last_led_index+1 < len(led_data)) and is_playing() and (time.time()-start_time < 4*60):
+        current_time = get_music_time()-0.5
+        if current_time >= times[last_led_index+1]:
+            led_sum = 0
+            for i, led in enumerate(leds_driver.leds):
+                led.r = led_data[last_led_index+1][i][0]
+                led.g = led_data[last_led_index+1][i][1]
+                led.b = led_data[last_led_index+1][i][2]
+                led_sum += led.r + led.g + led.b
+            if led_sum > 0 and first_light_time == 0:
+                first_light_time = current_time
+            leds_driver.write_data(None)
+            last_led_index += 1
+        time.sleep(0.005)
+
+    # Stop music and close pulseaudio   
+    stop_music()
+    if pulseaudio_process is not None:
+        atexit.register(pulseaudio_process.terminate)
+        print('Pulseaudio terminated.')
+
+    print(f'The LEDs first turned on at {first_light_time}s in song time')
