@@ -164,7 +164,7 @@ if __name__ == '__main__':
         uri_1,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=False, ### Disable at your own risk
+        use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
         set_bounds=False, ### Sends custom bounds to update the defaults
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         uri_2,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=False, ### Disable at your own risk
+        use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
         set_bounds=False, ### Sends custom bounds to update the defaults
@@ -205,14 +205,15 @@ if __name__ == '__main__':
         mocap_clients = []
 
     # Pause to initiate controller processing
-    for i, drone_client in enumerate(drone_clients):
-        drone_client.stop(0.1)
-        print('Waiting for parameters to be recieved before flight:')
-        while(drone_client.params_recieved < drone_client.params_sent):
-            time.sleep(0.1)
-        print('All bounds recieved, proceeding.')
-        # Find offset 
-        drone_client.initialize_offset(mocap_obj=mocap_clients[i])
+    if (use_mocap):
+        for i, drone_client in enumerate(drone_clients):
+            drone_client.stop(0.1)
+            print('Waiting for parameters to be recieved before flight:')
+            while(drone_client.params_recieved < drone_client.params_sent):
+                time.sleep(0.1)
+            print('All bounds recieved, proceeding.')
+            # Find offset 
+            drone_client.initialize_offset(mocap_obj=mocap_clients[i])
 
     ## Flight code here!
     def getFlightCommands():
@@ -220,8 +221,9 @@ if __name__ == '__main__':
             # Demo flight of the move_frame functionS
             lambda dc: dc.stop(10),
             lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 1.0, 0, "W"], t=60.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 1.0, 0, "W"], t=10.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 1.0, 0, "W"], t=20.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=10.0, lock=shared_lock),
 
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
             # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
@@ -234,8 +236,9 @@ if __name__ == '__main__':
             # Demo flight of the move_frame functionS
             lambda dc: dc.stop(10),
             lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 1.0, 0, "W"], t=60.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 1.0, 0, "W"], t=10.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 1.0, 0, "W"], t=20.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=10.0, lock=shared_lock),
 
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
             # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),

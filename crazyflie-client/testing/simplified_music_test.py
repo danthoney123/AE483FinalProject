@@ -253,7 +253,8 @@ if __name__ == '__main__':
     start_time = time.time()
     first_light_time = 0
     while (last_led_index+1 < len(led_data)) and is_playing() and (time.time()-start_time < 4*60):
-        current_time = get_music_time()-0.5
+        #print(get_music_time())
+        current_time = get_music_time() - 0.195
         if current_time >= times[last_led_index+1]:
             led_sum = 0
             for i, led in enumerate(leds_driver.leds):
@@ -265,7 +266,7 @@ if __name__ == '__main__':
                 first_light_time = current_time
             leds_driver.write_data(None)
             last_led_index += 1
-        time.sleep(0.005)
+        time.sleep(0.005) #0.005
 
     # Stop music and close pulseaudio   
     stop_music()

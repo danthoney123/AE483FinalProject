@@ -552,7 +552,7 @@ def play_song(drone_client):
     times = []
     led_data = []
     # Read the CSV file with correct parsing
-    with open("bad_apple_program.csv", mode='r') as file:
+    with open("60bpm_program.csv", mode='r') as file:
         reader = csv.reader(file)
         headers = next(reader)  # Skip headers
         for row in reader:
@@ -569,12 +569,12 @@ def play_song(drone_client):
     pulseaudio_process = run_pulseaudio()
 
     # Play the music and send LED lights
-    get_music_time, stop_music, is_playing = play_music("bad_apple.mp3")
+    get_music_time, stop_music, is_playing = play_music("60bpm.mp3")
     last_led_index = -1
     start_time = time.time()
     first_light_time = 0
     while (last_led_index+1 < len(led_data)) and is_playing() and (time.time()-start_time < 4*60):
-        current_time = get_music_time()-0.5
+        current_time = get_music_time()-0.195 # <---- change this value for computer
         if current_time >= times[last_led_index+1]:
             led_sum = 0
             for i, led in enumerate(leds_driver.leds):
