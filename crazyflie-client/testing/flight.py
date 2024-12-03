@@ -95,8 +95,7 @@ variables = [
     'extravars.violation_value',
     'extravars.violation_lower',
     'extravars.violation_upper',
-    'debugvars.current_obs',
-    'debugvars.mocap_count'
+    'extravars.current_obs',
     ]
 # Specify the uri of the drone to which you want to connect (if your radio
 # channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
@@ -152,14 +151,16 @@ if __name__ == '__main__':
     cflib.crtp.init_drivers()
 
     # Example, see list above or controller code for names
-    BOUNDS = {'w_x_lower': -2.0,
-              'w_y_lower': -2.0,
-              'w_x_upper': 2.0,
-              'w_y_upper': 2.0,
-              'w_z_lower': -4.0,
-              'w_z_upper': 4.0,
-              'psi_lower': -2*np.pi,
-              'psi_upper': 2*np.pi}
+    # BOUNDS = {'w_x_lower': -2.0,
+    #           'w_y_lower': -2.0,
+    #           'w_x_upper': 2.0,
+    #           'w_y_upper': 2.0,
+    #           'w_z_lower': -4.0,
+    #           'w_z_upper': 4.0,
+    #           'psi_lower': -2*np.pi,
+    #           'psi_upper': 2*np.pi}
+
+    BOUNDS = {'v_z_lower': -1.0}
 
     # Create and start the client that will connect to the drone
     drone_client = CrazyflieClient(
@@ -168,7 +169,8 @@ if __name__ == '__main__':
         use_observer=True, ### If disabled uses default observer
         use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
-        use_LED=False, ### Set to true in all cases where the flow sensor is missing or obstructed
+        use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
+        disable_failover=False, ### If true drone will not switch observers on sensor failure
         set_bounds=False, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         bounds_list=bounds_list,
@@ -204,25 +206,23 @@ if __name__ == '__main__':
     flight_commands = [
         # Demo flight of the move_frame functionS
         lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0),
-        lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=2.0),
-        lambda: drone_client.cf.param.set_value('ae483par.mocap_age', 15),
-        lambda: print('Failing Mocap'),
-        lambda: time.sleep(5),
-        lambda: drone_client.cf.param.set_value('ae483par.flow_age', 15),
-        lambda: print('Failing Flow'),
-        lambda: time.sleep(2),
-        lambda: drone_client.cf.param.set_value('ae483par.mocap_age', 0),
-        lambda: print('Unfailing mocap'),
-        lambda: time.sleep(5),
-        lambda: drone_client.cf.param.set_value('ae483par.flow_age', 0),
-        lambda: print('Unfailing Flow'),
+        lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.7, 0, "W"], t=3.0),
+        lambda: drone_client.move_frame([0, 0, 0.7, 0, "W"], [0, 0, 0.7, 0, "W"], t=5.0),
+        # lambda: drone_client.cf.param.set_value('ae483par.flow_age', 15),
+        # lambda: print('Failing Flow'),
+        # lambda: time.sleep(2),
+        # lambda: drone_client.cf.param.set_value('ae483par.mocap_age', 0),
+        # lambda: print('Unfailing mocap'),
+        # lambda: time.sleep(5),
+        # lambda: drone_client.cf.param.set_value('ae483par.flow_age', 0),
+        # lambda: print('Unfailing Flow'),
         # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
         # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
         # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
         # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 0, "G"], t=5.0),
         # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 135, "G"], t=10.0),
         # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
-        lambda: drone_client.move_frame([0.0, 0, 0.5, 0, "W"], [0.0, 0, 0.0, 0, "W"], t=2.0)
+        lambda: drone_client.move_frame([0.0, 0, 0.7, 0, "W"], [0.0, 0, 0.0, 0, "W"], t=2.0)
     ]
 
     # Run flight commands

@@ -144,11 +144,11 @@ static float r_old = 0.0f;
 static float mocap_old = 0.0;
 static uint32_t sample_count = 1;
 
+// Failover system
+static uint8_t disable_failover = 0; // Failover by default
+static uint8_t current_observer = 0; // Track current observer
+
 // Debug variables starts
-static uint8_t current_observer = 0; 
-static uint32_t mocap_count = 0;
-static uint32_t mocap_age_test = 0;
-static uint32_t flow_age_test = 0;
 // Debug variables end
 
 void initialize_observers(){
@@ -399,8 +399,6 @@ void ae483UpdateWithPose(poseMeasurement_t *meas)
   //  meas->quat.z    float     z component of quaternion from external orientation measurement
   //  meas->quat.w    float     w component of quaternion from external orientation measurement
 
-  mocap_count += 1;
-
   // Position
   p_x_mocap = meas->x;
   p_y_mocap = meas->y;
@@ -527,48 +525,33 @@ void controllerAE483(control_t *control,
     r_old = r;
     sample_count = 1;
 
-    // Reset debug vars 
+    // Reset failover system
     current_observer = 0;
-    mocap_count = 0;
-    mocap_age_test = 0;
-    flow_age_test = 0;
+    disable_failover = 0;
+
+    // Reset debug vars 
 
     reset = false;
   }
 
-  // If flow present & mocap present & mocap age = 0 & flow_age = 0:
-    // STATE_ESTIMATION_WTH_MOCAP_WITHOUT_LED;
-  // If flow present & mocap not present | (flow present & (mocap age > 0 & flow_age = 0))
-    // STATE_ESTIMATION_WITHOUT_MOCAP_LED;
-  // If not flow present & mocap present | (mocap present & (mocap age = 0 & flow age > 0))
-    // STATE_ESTIMATION_WITH_MOCAP_LED;
-  // If use_observer & mocap age > 0 & flow age > 0:
-    // Accelerometer based estimates
-
-  mocap_age = mocap_age_test;
-  flow_age = flow_age_test;
-
-
   // State estimates
-    if (use_observer && use_mocap && !use_LED && mocap_age < 10 && flow_age < 10 && r_age < 10){
+  bool use_flow = !use_LED;
+  if (use_observer && use_mocap && use_flow && ((mocap_age < 10 && flow_age < 10 && r_age < 50) || disable_failover)){
     // Custom observer with mocap but without LED Deck
     // Flow & Mocap, max sensor config, default
     STATE_ESTIMATION_WTH_MOCAP_WITHOUT_LED;
     current_observer = 1;
 
-   } else if (use_observer && ((!use_LED && !use_mocap) || (!use_LED && (mocap_age >= 10 && flow_age < 10 && r_age < 10)))) {
-    // Custom observer without mocap or LED Deck
-    // Flow & Accelerometer, fallback if mocap fails & we have flow installed
+  } else if (use_observer && use_flow && ((flow_age < 10 && r_age < 50) || disable_failover) ){
+    // Flow only
     STATE_ESTIMATION_WITHOUT_MOCAP_LED;
     current_observer = 2;
-
-  } else if (use_observer && ((use_mocap && use_LED) || (use_mocap && (mocap_age < 10 && (flow_age >=10 || r_age >= 10))))){
-    // Custom observer with mocap and with LED Deck
-    // Mocap & Accelerometer, fallback if flow fails & we have mocap installed
+  } else if (use_observer && use_mocap && ((mocap_age < 10) || disable_failover)){
+    // Mocap only
     STATE_ESTIMATION_WITH_MOCAP_LED;
     current_observer = 3;
 
-  } else if (use_observer) {
+  } else if (use_observer && !disable_failover) {
     p_x = p_x_int;
     p_y = p_y_int;
     p_z = p_z_int;
@@ -703,13 +686,12 @@ LOG_ADD(LOG_FLOAT,       violation_value,        &bounds_violation_value)
 LOG_ADD(LOG_FLOAT,       violation_lower,        &bounds_violation_lower)
 LOG_ADD(LOG_FLOAT,       violation_upper,        &bounds_violation_upper)
 LOG_ADD(LOG_FLOAT,       psi_des,                &psi_des)
+LOG_ADD(LOG_UINT8,       current_obs,            &current_observer) 
 LOG_GROUP_STOP(extravars)
 
-LOG_GROUP_START(debugvars)
-// ... put debug variables here temporarly ...
-LOG_ADD(LOG_UINT8,     current_obs,            &current_observer) 
-LOG_ADD(LOG_UINT32,    mocap_count,            &mocap_count) 
-LOG_GROUP_STOP(debugvars)
+// LOG_GROUP_START(debugvars)
+// // ... put debug variables here temporarly ...
+// LOG_GROUP_STOP(debugvars)
 
 //                1234567890123456789012345678 <-- max total length
 //                group   .name
@@ -721,6 +703,5 @@ PARAM_ADD(PARAM_UINT8,     use_safety,              &use_safety)
 PARAM_ADD(PARAM_UINT32,    bounds_update,           &bounds_update)
 PARAM_ADD(PARAM_UINT8,     use_mocap,               &use_mocap)
 PARAM_ADD(PARAM_UINT8,     use_LED,                 &use_LED)
-PARAM_ADD(PARAM_UINT32,    mocap_age,               &mocap_age_test)
-PARAM_ADD(PARAM_UINT32,    flow_age,               &flow_age_test)
+PARAM_ADD(PARAM_UINT8,     dis_failover,            &disable_failover)
 PARAM_GROUP_STOP(ae483par)

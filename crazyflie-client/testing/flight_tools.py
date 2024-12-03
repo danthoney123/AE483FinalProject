@@ -28,7 +28,20 @@ import atexit
 logging.basicConfig(level=logging.ERROR)
 
 class CrazyflieClient:
-    def __init__(self, uri, use_controller=False, use_observer=False, use_mocap=False, use_LED = True, use_safety=True, marker_deck_ids=None, set_bounds = False, bounds_list=None, bounds={}, filename='hardware_data', variables=None):
+    def __init__(self, 
+                 uri, 
+                 use_controller=False, 
+                 use_observer=False, 
+                 use_mocap=False, 
+                 use_LED = True, 
+                 use_safety=True, 
+                 marker_deck_ids=None, 
+                 set_bounds = False, 
+                 bounds_list=None, 
+                 disable_failover = False, 
+                 bounds={}, 
+                 filename='hardware_data', 
+                 variables=None):
         self.use_controller = use_controller
         self.use_observer = use_observer
         self.use_mocap = use_mocap
@@ -53,6 +66,7 @@ class CrazyflieClient:
         self.filename=filename
         self.bounds_list = bounds_list
         self.variables = variables
+        self.disable_failover = disable_failover
 
     def float_to_custom(self, int_value, float_value):
         # Get the IEEE 754 binary representation of the float
@@ -174,6 +188,12 @@ class CrazyflieClient:
             self.cf.param.add_update_callback(group='ae483par', name='use_observer', cb=param_callback)
             self.cf.param.set_value('ae483par.use_observer', 0)
             self.params_sent += 1
+
+        if self.disable_failover:
+            self.cf.param.add_update_callback(group='ae483par', name='dis_failover', cb=param_callback)
+            self.cf.param.set_value('ae483par.dis_failover', 1)
+            self.params_sent += 1
+            print('Observer failover disabled.')
 
         if self.set_bounds:
             for key in self.bounds.keys():
@@ -300,7 +320,7 @@ class CrazyflieClient:
             else:
                 time.sleep(0.1)
 
-    def move_frame(self, p_1, p_2, t, lock):
+    def move_frame(self, p_1, p_2, t, lock=None):
         # New smooth move command with format pX = [x, y, z, psi [degrees!!!!!!!!], "Frame"]
         print(f'Move smoothly from {p_1} to {p_2} in {t} seconds.')
         pos_1 = np.array(p_1[:3])
