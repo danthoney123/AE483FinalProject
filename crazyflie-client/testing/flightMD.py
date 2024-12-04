@@ -220,7 +220,7 @@ if __name__ == '__main__':
         flight_commands_1 = [
             # Demo flight of the move_frame functionS
             lambda dc: dc.stop(10),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
             lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 1.0, 0, "W"], t=10.0, lock=shared_lock),
             lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 1.0, 0, "W"], t=20.0, lock=shared_lock),
             lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=10.0, lock=shared_lock),
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         flight_commands_2 = [
             # Demo flight of the move_frame functionS
             lambda dc: dc.stop(10),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
             lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 1.0, 0, "W"], t=10.0, lock=shared_lock),
             lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 1.0, 0, "W"], t=20.0, lock=shared_lock),
             lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=10.0, lock=shared_lock),
