@@ -41,6 +41,11 @@ static float p_x_des = 0.0f;
 static float p_y_des = 0.0f;
 static float p_z_des = 0.0f;
 static float psi_des = 0.0f;
+static float p_x_err;
+static float p_y_err;
+static float psi_des_norm;
+static float psi_inter;
+static float psi_inter_2;
 
 // Input
 static float tau_x = 0.0f;
@@ -610,6 +615,30 @@ void controllerAE483(control_t *control,
   } else {
     // Otherwise, motor power commands should be
     // chosen by the controller
+    // Controller errors:
+    if (use_mocap) {
+      if ((psi > 0 && psi_mocap < 0) || (psi < 0 && psi_mocap > 0)) {
+        psi = psi_mocap;
+      }
+
+      psi_des_norm = fmod(radians(psi_des), 2.0f * PI);
+      if (psi_des_norm > PI) {
+        psi_des_norm -= 2.0f * PI;
+      } else if (psi_des_norm < -PI) {
+        psi_des_norm += 2.0f * PI; 
+      }
+
+      psi_inter = psi_des_norm;
+
+      if (psi_des_norm > HALF_PI && psi < -HALF_PI) {
+        psi_des_norm -= 2.0f*PI;
+      } else if (psi_des_norm < -HALF_PI && psi > HALF_PI) { 
+        psi_des_norm += 2.0f*PI; 
+      }
+
+      psi_inter_2 = psi - psi_des_norm;
+    }
+
     CONTROLLER;
   }
 
@@ -646,7 +675,6 @@ LOG_ADD(LOG_FLOAT,       p_y_des,                &p_y_des)
 LOG_ADD(LOG_FLOAT,       p_z_des,                &p_z_des)
 LOG_ADD(LOG_FLOAT,       tau_x,                  &tau_x)
 LOG_ADD(LOG_FLOAT,       tau_y,                  &tau_y)
-LOG_ADD(LOG_FLOAT,       tau_z,                  &tau_z)
 LOG_ADD(LOG_FLOAT,       f_z,                    &f_z)
 LOG_ADD(LOG_UINT16,      m_1,                    &m_1)
 LOG_ADD(LOG_UINT16,      m_2,                    &m_2)
@@ -689,9 +717,13 @@ LOG_ADD(LOG_FLOAT,       psi_des,                &psi_des)
 LOG_ADD(LOG_UINT8,       current_obs,            &current_observer) 
 LOG_GROUP_STOP(extravars)
 
-// LOG_GROUP_START(debugvars)
-// // ... put debug variables here temporarly ...
-// LOG_GROUP_STOP(debugvars)
+LOG_GROUP_START(debugvars)
+// ... put debug variables here temporarly ...
+LOG_ADD(LOG_FLOAT,       psi_des_norm,           &psi_des_norm)
+LOG_ADD(LOG_FLOAT,       psi_inter,              &psi_inter)
+LOG_ADD(LOG_FLOAT,       tau_z,                  &tau_z)
+LOG_ADD(LOG_FLOAT,       psi_inter_2,            &psi_inter_2)
+LOG_GROUP_STOP(debugvars)
 
 //                1234567890123456789012345678 <-- max total length
 //                group   .name
