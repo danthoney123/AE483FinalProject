@@ -321,9 +321,12 @@ class CrazyflieClient:
             else:
                 time.sleep(0.1)
 
-    def move_frame(self, p_2, t):
+    def move_frame(self, p_2, t, p_1 = None):
         # New smooth move command with format pX = [x, y, z, psi [degrees!!!!!!!!], "Frame"]
-        p_1 = self.frame_last_position
+        if p_1 is not None:
+            p_1 = p_1
+        else:
+            p_1 = self.frame_last_position
         print(f'Move smoothly from {p_1} to {p_2} in {t} seconds.')
         pos_1 = np.array(p_1[:3])
         pos_2 = np.array(p_2[:3])
