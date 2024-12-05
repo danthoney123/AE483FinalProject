@@ -67,6 +67,7 @@ class CrazyflieClient:
         self.bounds_list = bounds_list
         self.variables = variables
         self.disable_failover = disable_failover
+        self.frame_last_position = [0.0, 0.0, 0.0, 0.0, "W"]
 
     def float_to_custom(self, int_value, float_value):
         # Get the IEEE 754 binary representation of the float
@@ -320,8 +321,9 @@ class CrazyflieClient:
             else:
                 time.sleep(0.1)
 
-    def move_frame(self, p_1, p_2, t, lock=None):
+    def move_frame(self, p_2, t):
         # New smooth move command with format pX = [x, y, z, psi [degrees!!!!!!!!], "Frame"]
+        p_1 = self.frame_last_position
         print(f'Move smoothly from {p_1} to {p_2} in {t} seconds.')
         pos_1 = np.array(p_1[:3])
         pos_2 = np.array(p_2[:3])
@@ -359,6 +361,7 @@ class CrazyflieClient:
             # with lock:
             self.cf.commander.send_position_setpoint(pos_des[0], pos_des[1], pos_des[2], psi_des)
             time.sleep(0.1)
+        self.frame_last_position = p_2
       
     def initialize_offset(self, mocap_obj=None):
         print('Stopping drone for 3 seconds to start data collection, initialize drone, and collect mocap data')

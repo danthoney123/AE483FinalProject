@@ -162,7 +162,7 @@ if __name__ == '__main__':
     # Create and start the client that will connect to the drone
     drone_client_1 = CrazyflieClient(
         uri_1,
-        use_controller=True, ## If disabled uses default controller
+        use_controller=False, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
         use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
@@ -216,37 +216,49 @@ if __name__ == '__main__':
             drone_client.initialize_offset(mocap_obj=mocap_clients[i])
 
     ## Flight code here!
+    base_height = 1.0
     def getFlightCommands():
         flight_commands_1 = [
-            # Demo flight of the move_frame functionS
+            #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
             lambda dc: dc.stop(10),
-            lambda dc: dc.move_frame([0, 0, 0.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 1.0, 0, "W"], t=10.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 1.0, 0, "W"], t=20.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=10.0, lock=shared_lock),
+            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], t=1.0),
+            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
+            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
+            #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.move_frame([0.5, 0, base_height, 0, "W"], t=3.0),
+            lambda dc: dc.move_frame([0.5, 0.5, base_height, 0, "W"], t=3.0),
+            lambda dc: dc.move_frame([0, 0.5, base_height, 0, "W"], t=3.0),
+            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=3.0),
 
-            # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
-            # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
-            # # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 180, "G"], t=2.0),
-            # # lambda: drone_client.move_frame([-2.5, 0, 0.6, 180, "G"], [-2.5, 0, 0.6, 0, "G"], t=2.0),
-            # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
-            # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
+            #!!!!!!!!!!!!!!!! GO UP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.move_frame([0, 0, base_height + 0.5, 0, "W"], t=2.0),
+            #!!!!!!!!!!!!!!!!! GO DOWN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.move_frame([0, 0, base_height, 0,"W"], t=2.0),
+
+            #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], t=10.0),
         ]
-        flight_commands_2 = [
-            # Demo flight of the move_frame functionS
-            lambda dc: dc.stop(10),
-            lambda dc: dc.move_frame([0, 0, 0.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 1.0, 0, "W"], t=10.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 1.0, 0, "W"], t=20.0, lock=shared_lock),
-            lambda dc: dc.move_frame([0, 0, 1.0, 0, "W"], [0, 0, 0.2, 0, "W"], t=10.0, lock=shared_lock),
 
-            # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
-            # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
-            # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
-            # # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 180, "G"], t=2.0),
-            # # lambda: drone_client.move_frame([-2.5, 0, 0.6, 180, "G"], [-2.5, 0, 0.6, 0, "G"], t=2.0),
-            # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
-            # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
+        flight_commands_2 = [
+
+            #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.stop(10),
+            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], t=1.0),
+            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
+            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
+            #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.move_frame([0.5, 0, base_height, 0, "W"], t=3.0),
+            lambda dc: dc.move_frame([0.5, 0.5, base_height, 0, "W"], t=3.0),
+            lambda dc: dc.move_frame([0, 0.5, base_height, 0, "W"], t=3.0),
+            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=3.0),
+
+            #!!!!!!!!!!!!!!!! GO UP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.move_frame([0, 0, base_height - 0.5, 0, "W"], t=2.0),
+            #!!!!!!!!!!!!!!!!! GO DOWN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.move_frame([0, 0, base_height, 0,"W"], t=2.0),
+
+            #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], t=10.0),
         ]
         return [flight_commands_1, flight_commands_2]
 
@@ -280,19 +292,6 @@ if __name__ == '__main__':
 
     for t in threads:
         t.join()
-    
-    # for t in threads:
-    #     t.close()
-
-    # Run flight commands
-    # for command in flight_commands:
-    #     if(drone_client.data['extravars.set_motors']['data'][-1] == 1):
-    #         command()
-    #     else:
-    #         break            
-
-    # # # Pause after landing
-    # drone_client.stop(1.0)
 
     # Disconnect from the drone
     for drone_client in drone_clients:
