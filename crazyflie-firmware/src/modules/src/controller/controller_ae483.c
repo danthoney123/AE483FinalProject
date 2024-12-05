@@ -41,11 +41,11 @@ static float p_x_des = 0.0f;
 static float p_y_des = 0.0f;
 static float p_z_des = 0.0f;
 static float psi_des = 0.0f;
+
+// Stuff for yawing and such
 static float p_x_err;
 static float p_y_err;
 static float psi_des_norm;
-static float psi_inter;
-static float psi_inter_2;
 
 // Input
 static float tau_x = 0.0f;
@@ -617,7 +617,7 @@ void controllerAE483(control_t *control,
     // chosen by the controller
     // Controller errors:
     if (use_mocap) {
-      if ((psi > 0 && psi_mocap < 0) || (psi < 0 && psi_mocap > 0)) {
+      if ((psi > HALF_PI && psi_mocap < -HALF_PI) || (psi < -HALF_PI && psi_mocap > HALF_PI)) {
         psi = psi_mocap;
       }
 
@@ -628,15 +628,11 @@ void controllerAE483(control_t *control,
         psi_des_norm += 2.0f * PI; 
       }
 
-      psi_inter = psi_des_norm;
-
       if (psi_des_norm > HALF_PI && psi < -HALF_PI) {
         psi_des_norm -= 2.0f*PI;
       } else if (psi_des_norm < -HALF_PI && psi > HALF_PI) { 
         psi_des_norm += 2.0f*PI; 
       }
-
-      psi_inter_2 = psi - psi_des_norm;
     }
 
     CONTROLLER;
@@ -713,17 +709,15 @@ LOG_ADD(LOG_INT8,        violation_index,        &bounds_violation_index)
 LOG_ADD(LOG_FLOAT,       violation_value,        &bounds_violation_value)
 LOG_ADD(LOG_FLOAT,       violation_lower,        &bounds_violation_lower)
 LOG_ADD(LOG_FLOAT,       violation_upper,        &bounds_violation_upper)
-LOG_ADD(LOG_FLOAT,       psi_des,                &psi_des)
 LOG_ADD(LOG_UINT8,       current_obs,            &current_observer) 
+LOG_ADD(LOG_FLOAT,       psi_des,                &psi_des)
+LOG_ADD(LOG_FLOAT,       psi_des_norm,           &psi_des_norm)
+LOG_ADD(LOG_FLOAT,       tau_z,                  &tau_z)
 LOG_GROUP_STOP(extravars)
 
-LOG_GROUP_START(debugvars)
-// ... put debug variables here temporarly ...
-LOG_ADD(LOG_FLOAT,       psi_des_norm,           &psi_des_norm)
-LOG_ADD(LOG_FLOAT,       psi_inter,              &psi_inter)
-LOG_ADD(LOG_FLOAT,       tau_z,                  &tau_z)
-LOG_ADD(LOG_FLOAT,       psi_inter_2,            &psi_inter_2)
-LOG_GROUP_STOP(debugvars)
+// LOG_GROUP_START(debugvars)
+// // ... put debug variables here temporarly ...
+// LOG_GROUP_STOP(debugvars)
 
 //                1234567890123456789012345678 <-- max total length
 //                group   .name

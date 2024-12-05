@@ -112,15 +112,15 @@ ip_address = '128.174.245.190' # FIXME
 # Specify the name of the rigid body that corresponds to your active marker
 # deck in the motion capture system. If your marker deck number is X, this name
 # should be 'marker_deck_X'.
-marker_deck_name = 'marker_deck_30' # <-- FIXME
-# marker_deck_name = 'marker_deck_10'
+# marker_deck_name = 'marker_deck_30' # <-- FIXME
+marker_deck_name = 'marker_deck_10'
 
 # Specify the marker IDs that correspond to your active marker deck in the
 # motion capture system. If your marker deck number is X, these IDs should be
 # [X + 1, X + 2, X + 3, X + 4]. They are listed in clockwise order (viewed
 # top-down), starting from the front.
-marker_deck_ids = [31, 32, 33, 34] # FIXME
-# marker_deck_ids = [11, 12, 13, 14]
+# marker_deck_ids = [31, 32, 33, 34] # FIXME
+marker_deck_ids = [11, 12, 13, 14]
 
 ###################################
 # CLIENT FOR CRAZYFLIE
@@ -214,12 +214,20 @@ if __name__ == '__main__':
     ## Flight code here!
     flight_commands = [
         # Demo flight of the move_frame functionS
-        # lambda: drone_client.stop(10)
+        # lambda: drone_client.stop(20)
         lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0),
         lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.7, 0, "W"], t=3.0),
-        lambda: drone_client.move_frame([0, 0, 0.7, 0, "W"], [0, 0, 0.7, 0, "W"], t=10.0),
-        # lambda: drone_client.move_frame([0, 0, 0.7, 0, "W"], [0, 0, 0.7, 90, "W"], t=5.0),
-        # lambda: drone_client.move_frame([0, 0, 0.7, 90, "W"], [0, 0, 0.7, 90, "W"], t=10.0),
+        # lambda: drone_client.move_frame([0, 0, 0.7, 0, "W"], [0, 0, 0.7, 0, "W"], t=10.0),
+        # lambda: drone_client.move_frame([0, 0, 0.7, 0, "W"], [0, 0, 0.7, 0, "W"], t=5.0),
+        lambda: drone_client.move_frame([0, 0, 0.7, 0, "W"], [0, 0, 0.7, 0, "W"], t=1.0),
+        lambda: drone_client.move_frame([0, 0, 0.7, 0, "W"], [-2.0, 0, 0.7, 0, "G"], t=3.0),
+        # lambda: drone_client.move_frame([-2.0, 0, 0.7, 0, "G"], [-2.0, 0, 0.7, 90, "G"], t=3.0),
+        lambda: drone_client.move_frame([-2.0, 0, 0.7, 0, "G"], [-2.0, 0, 0.7, 360, "G"], t=10.0),
+        lambda: drone_client.move_frame([-2.0, 0, 0.7, 360, "G"], [-2.0, 0, 0.7, 360, "G"], t=3.0),
+        # lambda: drone_client.move_frame([-2.0, 0, 0.7, 180, "G"], [-2.0, 0, 0.7, 180, "G"], t=10.0),
+        # lambda: drone_client.move_frame([0, 0, 0.7, 180, "W"], [-2.5, 0, 0.7, 180, "G"], t=5.0),
+        # lambda: drone_client.move_frame([-2.5, 0, 0.7, 180, "G"], [-2.5, 0, 0.7, 180, "G"], t=3.0),
+        # lambda: drone_client.move_frame([-2.5, 0, 0.7, 180, "G"], [0, 0, 0.7, 180, "W"], t=5.0),
         # lambda: drone_client.move_frame([0, 0, 0.7, 90, "W"], [0, 0, 0.7, 180, "W"], t=5.0),
         # lambda: drone_client.move_frame([0, 0, 0.7, 180, "W"], [0, 0, 0.7, 180, "W"], t=10.0),
         # lambda: drone_client.move_frame([0, 0, 0.7, 180, "W"], [0, 0, 0.7, 360, "W"], t=10.0),
@@ -238,7 +246,7 @@ if __name__ == '__main__':
         # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 0, "G"], t=5.0),
         # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 135, "G"], t=10.0),
         # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
-        # lambda: drone_client.move_frame([0.0, 0, 0.7, 0, "W"], [0.0, 0, 0.0, 0, "W"], t=2.0)
+        lambda: drone_client.move_frame([-2.0, 0, 0.7, 360, "G"], [-2.0, 0, 0.0, 360, "G"], t=3.0),
     ]
 
     # Run flight commands
