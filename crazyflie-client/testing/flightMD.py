@@ -28,7 +28,7 @@ shared_lock = Lock()
 
 # Specify the uri of the drone to which you want to connect (if your radio
 # channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
-uri_1 = 'radio://0/32/2M/E7E7E7E7E8' # <-- FIXME
+uri_1 = 'radio://0/32/2M/E7E8E8E7E8' # <-- FIXME
 uri_2 = 'radio://0/32/2M/E7E7E7E7E7'
 
 
@@ -126,8 +126,8 @@ bounds_list = ["n_x","n_y","r",
                "v_x","v_y","v_z",
                "p_x_int", "p_y_int", "p_z_int",
                "v_x_int", "v_y_int", "v_z_int",
-               "a_x_in_W", "a_y_in_W","a_z_in_W"]
-
+               "a_x_in_W", "a_y_in_W","a_z_in_W",
+               "flow_age", "r_age", "mocap_age"]
 ###################################
 # FLIGHT CODE
 
@@ -167,6 +167,7 @@ if __name__ == '__main__':
         use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
+        disable_failover=False, ### If true drone will not switch observers on sensor failure
         set_bounds=False, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         marker_deck_ids=marker_deck_ids_1 if use_mocap else None,
@@ -181,6 +182,7 @@ if __name__ == '__main__':
         use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
+        disable_failover=False, ### If true drone will not switch observers on sensor failure
         set_bounds=False, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         marker_deck_ids=marker_deck_ids_2 if use_mocap else None,
@@ -220,7 +222,7 @@ if __name__ == '__main__':
     def getFlightCommands():
         flight_commands_1 = [
             #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.stop(10),
+            # lambda dc: dc.stop(10),
             lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], t=1.0),
             lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
             lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
@@ -231,7 +233,7 @@ if __name__ == '__main__':
             lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=3.0),
 
             #!!!!!!!!!!!!!!!! GO UP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([0, 0, base_height + 0.5, 0, "W"], t=2.0),
+            lambda dc: dc.move_frame([0, 0, base_height + 0.2, 0, "W"], t=2.0),
             #!!!!!!!!!!!!!!!!! GO DOWN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             lambda dc: dc.move_frame([0, 0, base_height, 0,"W"], t=2.0),
 
@@ -242,7 +244,7 @@ if __name__ == '__main__':
         flight_commands_2 = [
 
             #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.stop(10),
+            # lambda dc: dc.stop(10),
             lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], t=1.0),
             lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
             lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
@@ -253,7 +255,7 @@ if __name__ == '__main__':
             lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=3.0),
 
             #!!!!!!!!!!!!!!!! GO UP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([0, 0, base_height - 0.5, 0, "W"], t=2.0),
+            lambda dc: dc.move_frame([0, 0, base_height - 0.2, 0, "W"], t=2.0),
             #!!!!!!!!!!!!!!!!! GO DOWN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             lambda dc: dc.move_frame([0, 0, base_height, 0,"W"], t=2.0),
 
@@ -277,18 +279,18 @@ if __name__ == '__main__':
 
     threads = []
     t1 = Thread(target=drone_thread, args=(drone_client_1, flight_commands_1, shared_lock))
-    mt1 = Thread(target=play_song, args=(drone_client_1, ))
+    # mt1 = Thread(target=play_song, args=(drone_client_1, ))
     t1.start()
-    mt1.start()
+    # mt1.start()
     threads.append(t1)
-    threads.append(mt1)
+    # threads.append(mt1)
 
     t2 = Thread(target=drone_thread, args=(drone_client_2, flight_commands_2, shared_lock))
-    mt2 = Thread(target=play_song, args=(drone_client_2, ))
+    # mt2 = Thread(target=play_song, args=(drone_client_2, ))
     t2.start()
-    mt2.start()
+    # mt2.start()
     threads.append(t2)
-    threads.append(mt2)
+    # threads.append(mt2)
 
     for t in threads:
         t.join()
