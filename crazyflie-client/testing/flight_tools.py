@@ -568,7 +568,7 @@ def print_outcome(data, bounds_list):
         print('The drone had a "successful" flight.')
     print('==========================================================================')
 
-def play_song(drone_client): 
+def play_song(drone_client, cmd_file,  music_file, runtime): 
     ####################### LED Driver Setup ############################    
     memory = drone_client.cf.mem
     drone_client.cf.param.set_value('ring.effect', 13)
@@ -578,7 +578,7 @@ def play_song(drone_client):
     times = []
     led_data = []
     # Read the CSV file with correct parsing
-    with open("60bpm_program.csv", mode='r') as file:
+    with open(cmd_file, mode='r') as file:
         reader = csv.reader(file)
         headers = next(reader)  # Skip headers
         for row in reader:
@@ -595,11 +595,11 @@ def play_song(drone_client):
     pulseaudio_process = run_pulseaudio()
 
     # Play the music and send LED lights
-    get_music_time, stop_music, is_playing = play_music("60bpm.mp3")
+    get_music_time, stop_music, is_playing = play_music(music_file)
     last_led_index = -1
     start_time = time.time()
     first_light_time = 0
-    while (last_led_index+1 < len(led_data)) and is_playing() and (time.time()-start_time < 4*60):
+    while (last_led_index+1 < len(led_data)) and is_playing() and (time.time()-start_time < runtime):
         current_time = get_music_time()-0.195 # <---- change this value for computer
         if current_time >= times[last_led_index+1]:
             led_sum = 0
@@ -621,6 +621,59 @@ def play_song(drone_client):
         print('Pulseaudio terminated.')
 
     print(f'The LEDs first turned on at {first_light_time}s in song time')
+
+def play_song_multidrone(drone_clients, cmd_file,  music_file, runtime, time_offset): 
+    ####################### LED Driver Setup ############################  
+    leds_drivers = []
+    for dc in drone_clients:
+        memory = dc.cf.mem
+        dc.cf.param.set_value('ring.effect', 13)
+        leds_driver = LEDLib.LEDDriverMemory(id=4, type='LED driver', size=24, mem_handler=memory)
+        leds_drivers.append(leds_driver)
+################### Import LED Program ###############################
+    # Initialize lists for times and LED states
+    times = []
+    led_data = []
+    # Read the CSV file with correct parsing
+    with open(cmd_file, mode='r') as file:
+        reader = csv.reader(file)
+        headers = next(reader)  # Skip headers
+        for row in reader:
+            # Extract time (last column) and convert to float
+            time_instance = float(row[-1])
+            # Extract LED data (all columns except the last) and convert each string to an RGB tuple
+            led_row = [ast.literal_eval(led) for led in row[:-1]]
+            # Append to respective lists
+            times.append(time_instance)
+            led_data.append(led_row)
+
+########################### Run the show ############################
+    # Start pulseaudio for windows capture of audio output
+    pulseaudio_process = run_pulseaudio()
+
+    # Play the music and send LED lights
+    get_music_time, stop_music, is_playing = play_music(music_file)
+    last_led_index = -1
+    start_time = time.time()
+    while (last_led_index+1 < len(led_data)) and is_playing() and (time.time()-start_time < runtime):
+        current_time = get_music_time()-time_offset # <---- change this value for computer
+        if current_time >= times[last_led_index+1]:
+            for leds_driver in leds_drivers:
+                led_sum = 0
+                for i, led in enumerate(leds_driver.leds):
+                    led.r = led_data[last_led_index+1][i][0]
+                    led.g = led_data[last_led_index+1][i][1]
+                    led.b = led_data[last_led_index+1][i][2]
+                    led_sum += led.r + led.g + led.b
+                leds_driver.write_data(None)
+                last_led_index += 1
+        time.sleep(0.005)
+
+    # Stop music and close pulseaudio   
+    stop_music()
+    if pulseaudio_process is not None:
+        atexit.register(pulseaudio_process.terminate)
+        print('Pulseaudio terminated.')
 
 class MarkerdeckScan():
     def __init__(self):

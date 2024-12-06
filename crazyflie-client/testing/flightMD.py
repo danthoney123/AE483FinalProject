@@ -28,8 +28,8 @@ shared_lock = Lock()
 
 # Specify the uri of the drone to which you want to connect (if your radio
 # channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
-uri_1 = 'radio://0/32/2M/E7E8E8E7E8' # <-- FIXME
-uri_2 = 'radio://0/32/2M/E7E7E7E7E7'
+uri_1 = 'radio://0/32/2M/11E7E7E7E7'
+uri_2 = 'radio://1/16/2M/22E7E7E7E7' # <-- FIXME
 
 
 # Specify the variables you want to log at 100 Hz from the drone
@@ -105,17 +105,20 @@ variables = [
     'extravars.violation_index',
     'extravars.violation_value',
     'extravars.violation_lower',
-    'extravars.violation_upper'
+    'extravars.violation_upper',
+    'extravars.current_obs',
+    # 'debugvars.psi_des_norm',
+    # 'debugvars.tau_z',
     ]
 
 # Specify the IP address of the motion capture system
 ip_address = '128.174.245.190' # FIXME
 
-marker_deck_name_1 = 'marker_deck_10'
-marker_deck_ids_1 = marker_deck_ids = [11, 12, 13, 14]
+marker_deck_name_1 = 'marker_deck_30'
+marker_deck_ids_1 = marker_deck_ids = [31, 32, 33, 34]
 
-marker_deck_name_2 = 'marker_deck_30'
-marker_deck_ids_2 = marker_deck_ids = [31, 32, 33, 34]
+marker_deck_name_2 = 'marker_deck_10'
+marker_deck_ids_2 = marker_deck_ids = [11, 12, 13, 14]
 
 ###################################
 # CLIENT FOR CRAZYFLIE
@@ -128,6 +131,7 @@ bounds_list = ["n_x","n_y","r",
                "v_x_int", "v_y_int", "v_z_int",
                "a_x_in_W", "a_y_in_W","a_z_in_W",
                "flow_age", "r_age", "mocap_age"]
+
 ###################################
 # FLIGHT CODE
 
@@ -150,29 +154,36 @@ if __name__ == '__main__':
     cflib.crtp.init_drivers()
 
     # Example, see list above or controller code for names
-    BOUNDS = {'w_x_lower': -2.0,
-              'w_y_lower': -2.0,
-              'w_x_upper': 2.0,
-              'w_y_upper': 2.0,
-              'w_z_lower': -4.0,
-              'w_z_upper': 4.0,
-              'psi_lower': -2*np.pi,
-              'psi_upper': 2*np.pi}
+    BOUNDS = {'phi_lower': -4.0,
+              'phi_upper': 4.0,
+              'theta_lower': -4.0,
+              'theta_upper': 4.0,
+              'w_x_lower': -40.0,
+              'w_x_upper': 40.0,
+              'w_y_lower': -40.0,
+              'w_y_upper': 40.0,
+              'a_x_in_W_lower': -100,
+              'a_x_in_W_upper': 100,
+              'a_y_in_W_lower': -100,
+              'a_y_in_W_upper': 100,
+              'a_z_in_W_lower': -100,
+              'a_z_in_W_upper': 100}
 
     # Create and start the client that will connect to the drone
     drone_client_1 = CrazyflieClient(
         uri_1,
-        use_controller=False, ## If disabled uses default controller
+        use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
         use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
-        disable_failover=False, ### If true drone will not switch observers on sensor failure
-        set_bounds=False, ### Sends custom bounds to update the defaults
+        set_bounds=True, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         marker_deck_ids=marker_deck_ids_1 if use_mocap else None,
+        bounds_list=bounds_list,
         filename='md_flight_test_D1',
-        variables=variables
+        variables=variables,
+        disable_failover=True
     )
 
     drone_client_2 = CrazyflieClient(
@@ -182,12 +193,13 @@ if __name__ == '__main__':
         use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
-        disable_failover=False, ### If true drone will not switch observers on sensor failure
-        set_bounds=False, ### Sends custom bounds to update the defaults
+        set_bounds=True, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         marker_deck_ids=marker_deck_ids_2 if use_mocap else None,
+        bounds_list=bounds_list,
         filename='md_flight_test_D2',
-        variables=variables
+        variables=variables,
+        disable_failover=True
     )
 
     drone_clients = [drone_client_1, drone_client_2]
@@ -218,49 +230,50 @@ if __name__ == '__main__':
             drone_client.initialize_offset(mocap_obj=mocap_clients[i])
 
     ## Flight code here!
-    base_height = 1.0
+    base_height = 0.7
     def getFlightCommands():
         flight_commands_1 = [
             #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
-            # lambda dc: dc.stop(10),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], t=1.0),
-            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
-            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
-            #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([0.5, 0, base_height, 0, "W"], t=3.0),
-            lambda dc: dc.move_frame([0.5, 0.5, base_height, 0, "W"], t=3.0),
-            lambda dc: dc.move_frame([0, 0.5, base_height, 0, "W"], t=3.0),
-            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=3.0),
-
-            #!!!!!!!!!!!!!!!! GO UP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([0, 0, base_height + 0.2, 0, "W"], t=2.0),
-            #!!!!!!!!!!!!!!!!! GO DOWN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([0, 0, base_height, 0,"W"], t=2.0),
+            lambda dc: dc.stop(3),
+            lambda dc: dc.move_frame(p_1 = [0, 0, 0.2, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
+            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
+            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=1.0),
+            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0),
+            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=1.0),
+            # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0), # Stop
 
             #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], t=10.0),
+            lambda dc: dc.move_frame([-2, 0.5, 0, 0, "Q"], t=5.0),
         ]
 
         flight_commands_2 = [
-
             #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
-            # lambda dc: dc.stop(10),
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], t=1.0),
-            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
-            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
-            #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([0.5, 0, base_height, 0, "W"], t=3.0),
-            lambda dc: dc.move_frame([0.5, 0.5, base_height, 0, "W"], t=3.0),
-            lambda dc: dc.move_frame([0, 0.5, base_height, 0, "W"], t=3.0),
-            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=3.0),
-
-            #!!!!!!!!!!!!!!!! GO UP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([0, 0, base_height - 0.2, 0, "W"], t=2.0),
-            #!!!!!!!!!!!!!!!!! GO DOWN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([0, 0, base_height, 0,"W"], t=2.0),
-
+            lambda dc: dc.stop(3),
+            lambda dc: dc.move_frame(p_1 = [0, 0, 0.2, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
+            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
+            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=1.0),
+            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0),
+            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=1.0),
+            # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Stop
+ 
             #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([0, 0, 0.2, 0, "W"], t=10.0),
+            lambda dc: dc.move_frame([-3, -0.5, 0, 0, "Q"], t=5.0),
         ]
         return [flight_commands_1, flight_commands_2]
 
@@ -277,20 +290,32 @@ if __name__ == '__main__':
     flight_commands_1 = allfcs[0]
     flight_commands_2 = allfcs[1]
 
+    song_file = "bad_apple.mp3"
+    cmd_file = "bad_apple_program.csv"
+    runtime = 40
+    offset = 0.5
+
     threads = []
     t1 = Thread(target=drone_thread, args=(drone_client_1, flight_commands_1, shared_lock))
-    # mt1 = Thread(target=play_song, args=(drone_client_1, ))
+    # mt1 = Thread(target=play_song, args=(drone_client_1, cmd_file, song_file, runtime))
     t1.start()
+    # mt1.start()
     # mt1.start()
     threads.append(t1)
     # threads.append(mt1)
+    # threads.append(mt1)
 
     t2 = Thread(target=drone_thread, args=(drone_client_2, flight_commands_2, shared_lock))
-    # mt2 = Thread(target=play_song, args=(drone_client_2, ))
+    # mt2 = Thread(target=play_song, args=(drone_client_2, cmd_file, song_file, runtime))
     t2.start()
+    # mt2.start()
     # mt2.start()
     threads.append(t2)
     # threads.append(mt2)
+
+    music_thread = Thread(target=play_song_multidrone, args=([drone_client_1, drone_client_2], cmd_file, song_file, runtime, offset))
+    music_thread.start()
+    threads.append(music_thread)
 
     for t in threads:
         t.join()
@@ -320,5 +345,6 @@ if __name__ == '__main__':
         json.dump(data_2, outfile, sort_keys=False)
 
     # Report outcome of flight
-    for drone_client in drone_clients:
+    for i, drone_client in enumerate(drone_clients):
+        print(f"Outcome of drone {i+1}")
         print_outcome(drone_client.data, bounds_list)
