@@ -141,7 +141,7 @@ bounds_list = ["n_x","n_y","r",
 if __name__ == '__main__':
 
     print(f'Rebooting drones')
-    PowerSwitch(uri_1).stm_power_cycle()
+    # PowerSwitch(uri_1).stm_power_cycle()
     PowerSwitch(uri_2).stm_power_cycle()
     time.sleep(5)
     # Specify whether or not to use the motion capture system
@@ -170,7 +170,8 @@ if __name__ == '__main__':
               'a_y_in_W_lower': -100,
               'a_y_in_W_upper': 100,
               'a_z_in_W_lower': -100,
-              'a_z_in_W_upper': 100}
+              'a_z_in_W_upper': 100,
+              'mocap_age_upper': 750}
 
     # Create and start the client that will connect to the drone
     drone_client_1 = CrazyflieClient(
@@ -186,7 +187,7 @@ if __name__ == '__main__':
         bounds_list=bounds_list,
         filename='md_flight_test_D1',
         variables=variables,
-        disable_failover=True
+        disable_failover=False
     )
 
     drone_client_2 = CrazyflieClient(
@@ -202,7 +203,7 @@ if __name__ == '__main__':
         bounds_list=bounds_list,
         filename='md_flight_test_D2',
         variables=variables,
-        disable_failover=True
+        disable_failover=False
     )
 
     drone_clients = [drone_client_1, drone_client_2]
@@ -233,7 +234,7 @@ if __name__ == '__main__':
             drone_client.initialize_offset(mocap_obj=mocap_clients[i])
 
     ## Flight code here!
-    base_height = 0.7
+    base_height = 1.0
     def getFlightCommands():
         flight_commands_1 = [
             #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -244,17 +245,17 @@ if __name__ == '__main__':
             lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0),
             lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=1.0),
             # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0), # Stop
+            lambda dc: dc.move_frame([-3, 0.5, base_height, 90, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-3, 0.5, base_height, 90, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-3, -0.5, base_height, 180, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-3, -0.5, base_height, 180, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-2, -0.5, base_height, 270, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-2, -0.5, base_height, 270, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-2, 0.5, base_height, 360, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-2, 0.5, base_height, 360, "Q"], t=5.0), # Stop
 
             #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([-2, 0.5, 0, 0, "Q"], t=5.0),
+            lambda dc: dc.move_frame([-2, 0.5, 0, 360, "Q"], t=5.0),
         ]
 
         flight_commands_2 = [
@@ -300,25 +301,16 @@ if __name__ == '__main__':
 
     threads = []
     t1 = Thread(target=drone_thread, args=(drone_client_1, flight_commands_1, shared_lock))
-    # mt1 = Thread(target=play_song, args=(drone_client_1, cmd_file, song_file, runtime))
     t1.start()
-    # mt1.start()
-    # mt1.start()
     threads.append(t1)
-    # threads.append(mt1)
-    # threads.append(mt1)
 
     t2 = Thread(target=drone_thread, args=(drone_client_2, flight_commands_2, shared_lock))
-    # mt2 = Thread(target=play_song, args=(drone_client_2, cmd_file, song_file, runtime))
     t2.start()
-    # mt2.start()
-    # mt2.start()
     threads.append(t2)
-    # threads.append(mt2)
 
-    # music_thread = Thread(target=play_song_multidrone, args=([drone_client_1, drone_client_2], cmd_file, song_file, runtime, offset))
-    # music_thread.start()
-    # threads.append(music_thread)
+    music_thread = Thread(target=play_song_multidrone, args=([drone_client_1, drone_client_2], cmd_file, song_file, runtime, offset))
+    music_thread.start()
+    threads.append(music_thread)
 
     for t in threads:
         t.join()

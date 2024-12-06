@@ -552,18 +552,19 @@ def print_outcome(data, bounds_list):
         print('\n')
         shutoff_index = np.where((np.array(data['extravars.set_motors']['data'][:-1]) == 1) & (np.array(data['extravars.set_motors']['data'][1:]) == 0))[0][0]
         shutoff_time = data['extravars.set_motors']['time'][shutoff_index]
-        shutoff_keys = ['m_1', 'm_2', 'm_3', 'm_4', 'p_x_des', 'p_y_des', 'p_z_des']
+        # shutoff_keys = ['m_1', 'm_2', 'm_3', 'm_4', 'p_x_des', 'p_y_des', 'p_z_des']
+        shutoff_keys = ['m_1', 'p_x_des', 'p_y_des', 'p_z_des']
         shutoff_data = []
         for key in shutoff_keys:
             closest_index =  np.abs(np.array(data['ae483log.'+key]['time']) - shutoff_time).argmin()
             shutoff_data.append(data['ae483log.'+key]['data'][closest_index])
-        if np.sum(shutoff_data[:4]) != 0:
+        if np.sum(shutoff_data[0]) != 0:
             print(f"Drone shutoff occured during flight at {shutoff_time} seconds when the desired position was\
-                  ({shutoff_data[4]:.3f}, {shutoff_data[5]:.3f}, {shutoff_data[6]:.3f})\
-                  \nand average motor command was {np.average(shutoff_data[:4])}.")
+                  ({shutoff_data[1]:.3f}, {shutoff_data[2]:.3f}, {shutoff_data[3]:.3f})\
+                  \nand average motor command was {np.average(shutoff_data[0])}.")
         else:
             print(f"Drone shutoff occured at {shutoff_time} seconds but was on the ground or landing.\
-                  \nAt that time p_des = ({shutoff_data[4]:.3f}, {shutoff_data[5]:.3f}, {shutoff_data[6]:.3f}) and m = {np.average(shutoff_data[:4])}.")
+                  \nAt that time p_des = ({shutoff_data[1]:.3f}, {shutoff_data[2]:.3f}, {shutoff_data[3]:.3f}) and m = {np.average(shutoff_data[0])}.")
     else:
         print('The drone had a "successful" flight.')
     print('==========================================================================')
