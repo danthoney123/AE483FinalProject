@@ -1,2 +1,4 @@
 crazyflie-firmware/src/modules/interface/controller/user_specific_logic.h
 crazyflie-client/**/*.json
+crazyflie-client/testing/md_flight_test_D1.json
+crazyflie-client/testing/md_flight_test_D2.json

@@ -1,8 +1,6 @@
 #ifndef USER_SPECIFIC_LOGIC_H
 #define USER_SPECIFIC_LOGIC_H
 
-#include <math.h>
-
 // User-Specific Constants
 #define K_FLOW            4.09255568f      // k flow constant
 #define P_Z_EQ            0.5f             // Equlibrium height of z position
@@ -45,6 +43,7 @@ static float default_bounds[NUM_BOUNDS][2] = {
     {-1.0f, 500.0f}   // mocap age bounds (number of cycles @ 500 Hz)
 };
 
+// FIXME REPLACE WITH YOUR OWN OBSERVER AND CONTROLLER
 // State estimates (this logic will be inserted at each location where STATE_ESTIMATION_X is used)
 // Observer without mocap or LED Deck (Lab 7)
 #define STATE_ESTIMATION_WITHOUT_MOCAP_LED \
@@ -72,14 +71,14 @@ static float default_bounds[NUM_BOUNDS][2] = {
     err_6 = psi - psi_mocap; \
     err_7 = theta - theta_mocap; \
     err_8 = phi - phi_mocap; \
-    p_x += dt*(v_x - (0.0030786366954255857f*err_0 + 19.623468144799038f*err_3 + 0.24898129987407316f*(err_7*cosf(psi) + err_8*sinf(psi)))); \
-    p_y += dt*(v_y - (0.0062286935450038515f*err_1 + 10.92305497804218f*err_4 + -0.44296342104455017f*(err_8*cosf(psi) - err_7*sinf(psi)))); \
+    p_x += dt*(v_x - (0.0030786366954255857f*err_0 + 19.623468144799038f*err_3 + 0.24898129987407316f*err_7)); \
+    p_y += dt*(v_y - (0.0062286935450038515f*err_1 + 10.92305497804218f*err_4 + -0.44296342104455017f*err_8)); \
     p_z += dt*(v_z - (21.53590456130722f*err_2 + 0.5369062078996262f*err_5)); \
     psi += dt*(w_z - (1.5000000000000016f*err_6)); \
     theta += dt*(w_y - (0.001561665202129448f*err_0 + 0.6916147218724252f*err_3 + 2.552528071934991f*err_7)); \
     phi += dt*(w_x - (-0.0008101406187475177f*err_1 + -0.13179076989755217f*err_4 + 3.4852583735280604f*err_8)); \
-    v_x += dt*(a_z_0*theta*cosf(psi) + a_z_0*phi*sinf(psi) - (0.06168328483604743f*err_0 + 31.01715092907147f*err_3 + 5.664138910887472f*(err_7*cosf(psi) + err_8*sinf(psi)))); \
-    v_y += dt*(-a_z_0*phi*cosf(psi) + a_z_0*theta*sinf(psi) - (0.0715179223697852f*err_1 + 15.383689251205787f*err_4 + -6.7252248898307f*(err_8*cosf(psi) - err_7*sinf(psi)))); \
+    v_x += dt*(a_z_0*theta - (0.06168328483604743f*err_0 + 31.01715092907147f*err_3 + 5.664138910887472f*err_7)); \
+    v_y += dt*(-a_z_0*phi - (0.0715179223697852f*err_1 + 15.383689251205787f*err_4 + -6.7252248898307f*err_8)); \
     v_z += dt*(a_z-a_z_0 - (93.17897306271185f*err_2 + 2.3230214890980805f*err_5)); 
 
 // Observer with mocap and LED DECK (Final Project)
@@ -90,24 +89,22 @@ static float default_bounds[NUM_BOUNDS][2] = {
     err_3 = psi - psi_mocap; \
     err_4 = theta - theta_mocap; \
     err_5 = phi - phi_mocap; \
-    p_x += dt*(v_x - (19.88640059336123f*err_0 + 0.26920920812040056f*(err_4*cosf(psi) + err_5*sinf(psi)))); \
-    p_y += dt*(v_y - (11.235803213396196f*err_1 + -0.49010250299907365f*(err_5*cosf(psi) - err_4*sinf(psi)))); \
+    p_x += dt*(v_x - (19.88640059336123f*err_0 + 0.26920920812040056f*err_4)); \
+    p_y += dt*(v_y - (11.235803213396196f*err_1 + -0.49010250299907365f*err_5)); \
     p_z += dt*(v_z - (6.08230711439294f*err_2)); \
     psi += dt*(w_z - (1.5f*err_3)); \
     theta += dt*(w_y - (0.7478033558900014f*err_0 + 2.560992864248374f*err_4)); \
     phi += dt*(w_x - (-0.1458156207269972f*err_1 + 3.48977583797374f*err_5)); \
-    v_x += dt*(a_z_0*theta*cosf(psi) + a_z_0*phi*sinf(psi) - (35.8351220544533f*err_0 + 6.043045017090066f*(err_4*cosf(psi) + err_5*sinf(psi)))); \
-    v_y += dt*(-a_z_0*phi*cosf(psi) + a_z_0*theta*sinf(psi) - (18.46315434939661f*err_1 + -7.217043151186782f*(err_5*cosf(psi) - err_4*sinf(psi)))); \
-    v_z += dt*(a_z-a_z_0 - (14.894736842105242f*err_2)); 
+    v_x += dt*(a_z_0*theta - (35.8351220544533f*err_0 + 6.043045017090066f*err_4)); \
+    v_y += dt*(-a_z_0*phi - (18.46315434939661f*err_1 + -7.217043151186782f*err_5)); \
+    v_z += dt*(a_z-a_z_0 - (14.894736842105242f*err_2));
 
 // Controller logic (this code will be inserted at each location where MOTOR_COMMANDS is used)
 // Controller and motor logic
 #define CONTROLLER \
-    p_x_err = (p_x - p_x_des)*cosf(psi) + (p_y - p_y_des)*sinf(psi); \
-    p_y_err = -(p_x - p_x_des)*sinf(psi) + (p_y - p_y_des)*cosf(psi); \
-    tau_x_cmd = 0.01153626f * p_y_err -0.02190339f * phi + 0.00762691f * (-v_x*sinf(psi) + v_y*cosf(psi)) -0.00314458f * w_x -4.49542642f * tau_x; \
-    tau_y_cmd = -0.00815737f * p_x_err -0.02001104f * theta -0.00631934f * (v_x*cosf(psi) + v_y*sinf(psi)) -0.00311792f * w_y -4.27664907f * tau_y; \
-    tau_z = -0.00125252f * (psi - psi_des_norm) -0.00026410f * w_z; \
+    tau_x_cmd = 0.01153626f * (p_y - p_y_des) -0.02190339f * phi + 0.00762691f * v_y -0.00314458f * w_x -4.49542642f * tau_x; \
+    tau_y_cmd = -0.00815737f * (p_x - p_x_des) -0.02001104f * theta -0.00631934f * v_x -0.00311792f * w_y -4.27664907f * tau_y; \
+    tau_z = -0.00125252f * (psi - radians(psi_des)) -0.00026410f * w_z; \
     f_z = -0.35649465f * (p_z - p_z_des) -0.38846142f * v_z + 0.32765400f; \
     m_1 = limitUint16( -3698224.9f * tau_x_cmd -3698224.9f * tau_y_cmd -186567164.2f * tau_z + 147929.0f * f_z ); \
     m_2 = limitUint16( -3698224.9f * tau_x_cmd + 3698224.9f * tau_y_cmd + 186567164.2f * tau_z + 147929.0f * f_z ); \

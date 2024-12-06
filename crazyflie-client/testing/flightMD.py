@@ -238,7 +238,7 @@ if __name__ == '__main__':
         flight_commands_1 = [
             #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
             lambda dc: dc.stop(3),
-            lambda dc: dc.move_frame(p_1 = [0, 0, 0.2, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
+            lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
             lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
             lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=1.0),
             lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0),
@@ -260,7 +260,7 @@ if __name__ == '__main__':
         flight_commands_2 = [
             #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
             lambda dc: dc.stop(3),
-            lambda dc: dc.move_frame(p_1 = [0, 0, 0.2, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
+            lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
             lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
             lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=1.0),
             lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0),
