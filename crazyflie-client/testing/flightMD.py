@@ -110,6 +110,8 @@ variables = [
     # 'extravars.psi_des',
     'extravars.psi_des_norm',
     # 'extravars.tau_z',
+    'debugvars.max_mocap_age',
+    'debugvars.max_p_dis'
     ]
 
 # Specify the IP address of the motion capture system
@@ -314,9 +316,9 @@ if __name__ == '__main__':
     threads.append(t2)
     # threads.append(mt2)
 
-    music_thread = Thread(target=play_song_multidrone, args=([drone_client_1, drone_client_2], cmd_file, song_file, runtime, offset))
-    music_thread.start()
-    threads.append(music_thread)
+    # music_thread = Thread(target=play_song_multidrone, args=([drone_client_1, drone_client_2], cmd_file, song_file, runtime, offset))
+    # music_thread.start()
+    # threads.append(music_thread)
 
     for t in threads:
         t.join()

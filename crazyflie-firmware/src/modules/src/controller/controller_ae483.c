@@ -156,6 +156,11 @@ static uint8_t current_observer = 0; // Track current observer
 // Debug variables starts
 static uint16_t max_mocap_age = 0;
 static uint16_t mocap_age_old;
+static float p_x_des_old = 0;
+static float p_y_des_old = 0;
+static float p_z_des_old = 0;
+static float p_dis;
+static float max_p_dis = 0;
 // Debug variables end
 
 void initialize_observers(){
@@ -538,6 +543,10 @@ void controllerAE483(control_t *control,
 
     // Reset debug vars 
     max_mocap_age = 0;
+    p_x_des_old = 0;
+    p_y_des_old = 0;
+    p_z_des_old = 0;
+    max_p_dis = 0;
 
     reset = false;
   }
@@ -645,6 +654,10 @@ void controllerAE483(control_t *control,
       }
       mocap_age_old = mocap_age;
     }
+    p_dis = pow((pow((p_x_des - p_x_des_old), 2.0f) + pow((p_y_des - p_y_des_old), 2.0f) + pow((p_z_des - p_z_des_old), 2.0f)), 0.5f);
+    if (p_dis > max_p_dis){
+      max_p_dis = p_dis;
+    }
 
     CONTROLLER;
   }
@@ -726,10 +739,11 @@ LOG_ADD(LOG_FLOAT,       psi_des_norm,           &psi_des_norm)
 // LOG_ADD(LOG_FLOAT,       tau_z,                  &tau_z)
 LOG_GROUP_STOP(extravars)
 
-// LOG_GROUP_START(debugvars)
-// // ... put debug variables here temporarly ...
-// LOG_ADD(LOG_UINT16,      max_mocap_age,           &max_mocap_age)
-// LOG_GROUP_STOP(debugvars)
+LOG_GROUP_START(debugvars)
+// ... put debug variables here temporarly ...
+LOG_ADD(LOG_UINT16,      max_mocap_age,           &max_mocap_age)
+LOG_ADD(LOG_FLOAT,       max_p_dis,               &max_p_dis)
+LOG_GROUP_STOP(debugvars)
 
 //                1234567890123456789012345678 <-- max total length
 //                group   .name
