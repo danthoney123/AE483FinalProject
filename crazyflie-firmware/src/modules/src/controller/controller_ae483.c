@@ -154,6 +154,8 @@ static uint8_t disable_failover = 0; // Failover by default
 static uint8_t current_observer = 0; // Track current observer
 
 // Debug variables starts
+static uint16_t max_mocap_age = 0;
+static uint16_t mocap_age_old;
 // Debug variables end
 
 void initialize_observers(){
@@ -535,6 +537,7 @@ void controllerAE483(control_t *control,
     disable_failover = 0;
 
     // Reset debug vars 
+    max_mocap_age = 0;
 
     reset = false;
   }
@@ -635,6 +638,14 @@ void controllerAE483(control_t *control,
       }
     }
 
+    // Debug
+    if (safe_to_set_motors){
+      if (mocap_age > mocap_age_old){
+        max_mocap_age = mocap_age;
+      }
+      mocap_age_old = mocap_age;
+    }
+
     CONTROLLER;
   }
 
@@ -717,6 +728,7 @@ LOG_GROUP_STOP(extravars)
 
 // LOG_GROUP_START(debugvars)
 // // ... put debug variables here temporarly ...
+// LOG_ADD(LOG_UINT16,      max_mocap_age,           &max_mocap_age)
 // LOG_GROUP_STOP(debugvars)
 
 //                1234567890123456789012345678 <-- max total length
