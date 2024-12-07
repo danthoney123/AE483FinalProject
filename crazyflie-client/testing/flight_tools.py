@@ -8,6 +8,9 @@ from cflib.crazyflie.log import LogConfig
 import struct
 import os
 import cflib.crazyflie.mem.led_driver_memory as LEDLib 
+from multiprocessing import SimpleQueue
+import cflib.crtp
+import threading
 
 # Imports for qualisys (the motion capture system)
 import asyncio
@@ -521,6 +524,22 @@ def play_music(file_path):
     
     return get_music_time, stop_music, is_playing
 
+def init_music(file_path):
+    pygame.mixer.init()
+    pygame.mixer.music.load(file_path)
+    time.sleep(1)
+
+    def play_music():
+        pygame.mixer.music.play()
+    def get_music_time():
+        return pygame.mixer.music.get_pos()/1000
+    def stop_music():
+        return pygame.mixer.music.stop()
+    def is_playing():
+        return pygame.mixer.music.get_busy()    
+    
+    return get_music_time, play_music, stop_music, is_playing
+
 def run_pulseaudio(path_to_pulse=r'/mnt/c/pulseaudio-1.1/bin/pulseaudio.exe'):
     result = subprocess.run(
         ["pgrep", "-f", path_to_pulse],
@@ -623,7 +642,7 @@ def play_song(drone_client, cmd_file,  music_file, runtime):
 
     print(f'The LEDs first turned on at {first_light_time}s in song time')
 
-def play_song_multidrone(drone_clients, cmd_file,  music_file, runtime, time_offset): 
+def play_song_multidrone(drone_clients, end_calls, cmd_file,  music_file, runtime, time_offset): 
     ####################### LED Driver Setup ############################  
     leds_drivers = []
     for dc in drone_clients:
@@ -656,7 +675,7 @@ def play_song_multidrone(drone_clients, cmd_file,  music_file, runtime, time_off
     get_music_time, stop_music, is_playing = play_music(music_file)
     last_led_index = -1
     start_time = time.time()
-    while (last_led_index+1 < len(led_data)) and is_playing() and (time.time()-start_time < runtime):
+    while (last_led_index+1 < len(led_data)) and is_playing() and (time.time()-start_time < runtime) and any(not event.is_set() for event in end_calls):
         current_time = get_music_time()-time_offset # <---- change this value for computer
         if current_time >= times[last_led_index+1]:
             for leds_driver in leds_drivers:
@@ -675,6 +694,213 @@ def play_song_multidrone(drone_clients, cmd_file,  music_file, runtime, time_off
     if pulseaudio_process is not None:
         atexit.register(pulseaudio_process.terminate)
         print('Pulseaudio terminated.')
+
+def start_drones(uris, marker_decks, filenames, variables, disable_failover=False, set_bounds=False, bounds=None):
+    cflib.crtp.init_drivers()
+    drone_clients = []
+    for i, uri in enumerate(uris):
+        marker_id = [marker_decks[i]+1, marker_decks[i]+2, marker_decks[i]+3, marker_decks[i]+4]
+        dc = CrazyflieClient(
+            uri,
+            use_controller=True,
+            use_observer=True,
+            use_safety=True,
+            use_mocap=True,
+            use_LED=True,
+            set_bounds=set_bounds,
+            bounds = bounds,
+            filename=filenames[i],
+            variables=variables,
+            disable_failover=disable_failover,
+            marker_deck_ids=marker_id
+        )
+        drone_clients.append(dc)
+
+    while(any(not dc.is_fully_connected for dc in drone_clients)):
+        time.sleep(0.1)
+
+    mocap_clients = []
+    # Create and start the client that will connect to the motion capture system
+    for dc in drone_clients:
+        pose_queue = SimpleQueue()
+        Thread(target=send_poses, args=(dc, pose_queue)).start()
+        mocap_clients.append(QualisysClient('128.174.245.190', "marker_deck_" + str(dc.marker_deck_ids[0] - 1), pose_queue))
+
+    for i, dc in enumerate(drone_clients):
+        dc.stop(0.1)
+        print('Waiting for parameters to be recieved before flight:')
+        while(dc.params_recieved < dc.params_sent):
+            time.sleep(0.1)
+        print('All bounds recieved, proceeding.')
+        # Find offset 
+        dc.initialize_offset(mocap_obj=mocap_clients[i])
+
+    return drone_clients, mocap_clients
+
+def load_commands(filename):
+    commands = {}
+    with open(filename, mode='r') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            timestamp = float(row["timestamp"])
+            command_dict = {
+                key: ast.literal_eval(value) if value and value != "END" else (value if value else None) 
+                for key, value in row.items() if key != "timestamp"
+            }
+            commands[timestamp] = command_dict
+    return commands
+
+def get_drone_command(commands, drone_id, current_time):
+    print(f'Getting command at {current_time} sec')
+    timestamps = sorted(commands.keys())
+    # Initialize variables to hold the nearest past and next timestamps for the drone
+    past_time = None
+    next_time = None
+
+    # Iterate through timestamps to find the nearest past and next timestamps
+    for i, timestamp in enumerate(timestamps):
+        print(f'Drone {drone_id}, current time {current_time}, timestamp {timestamp}')
+        if timestamp <= current_time and f"drone_{drone_id}" in commands[timestamp]:
+            past_time = timestamp  # The latest time before or equal to current_time
+        if timestamp > current_time:
+            if commands[timestamp].get(f"drone_{drone_id}") != None:
+                next_time = timestamp  # The first time after current_time that contains the drone_id command or "END"
+                break  # Stop searching once we find the next relevant timestamp
+
+    runtime = next_time - current_time if next_time is not None else None
+    command = commands[past_time].get(f"drone_{drone_id}") if past_time is not None else None
+    next_command = commands[next_time].get(f"drone_{drone_id}") if next_time is not None else None
+
+    print(f'Drone {drone_id} @ {current_time}: {runtime}, {command}, {next_command}')
+
+    return command, next_command, runtime
+
+def command_drone(drone_client, music_time, is_playing, commands, drone_id, offset, end_call, stop_event):
+    while not stop_event.is_set():
+        if is_playing():
+            current_time = music_time() - offset
+            command, next_command, runtime = get_drone_command(commands, drone_id, current_time)
+            if (command is None) and (next_command is None) and (runtime is None):
+                print(f'Could not find a command for drone {drone_id} at {current_time} sec')
+                end_call.set()
+                break
+            elif (command is None) or (next_command is None) or (runtime is None):
+                print(f'Skipping loop for drone {drone_id}')
+                time.sleep(0.1)
+                pass
+            elif (drone_client.data['extravars.set_motors']['data'][-1] == 0):
+                print(f'Drone {drone_id} failed')
+                end_call.set()
+                break
+            else:
+                drone_client.move_frame(p_2 = command, t = runtime)
+            if next_command == "END":
+                print(f'Drone {drone_id} reached the end of its sequence.')
+                break
+
+
+def command_LEDs(drone_clients, end_calls, cmd_file, start_music, music_time, is_playing, offset, max_runtime, stop_event):
+    leds_drivers = []
+    for dc in drone_clients:
+        memory = dc.cf.mem
+        dc.cf.param.set_value('ring.effect', 13)
+        leds_driver = LEDLib.LEDDriverMemory(id=4, type='LED driver', size=24, mem_handler=memory)
+        leds_drivers.append(leds_driver)
+
+    times = []
+    led_data = []
+    # Read the CSV file with correct parsing
+    with open(cmd_file, mode='r') as file:
+        reader = csv.reader(file)
+        headers = next(reader)  # Skip headers
+        for row in reader:
+            # Extract time (last column) and convert to float
+            time_instance = float(row[-1])
+            # Extract LED data (all columns except the last) and convert each string to an RGB tuple
+            led_row = [ast.literal_eval(led) for led in row[:-1]]
+            # Append to respective lists
+            times.append(time_instance)
+            led_data.append(led_row)
+
+    start_music()
+
+    last_led_index = -1
+    start_time = time.time()
+    while (last_led_index+1 < len(led_data)) and is_playing() and (time.time()-start_time < max_runtime) and any(not event.is_set() for event in end_calls):
+        current_time = music_time()-offset # <---- change this value for computer
+        if current_time >= times[last_led_index+1]:
+            for leds_driver in leds_drivers:
+                led_sum = 0
+                for i, led in enumerate(leds_driver.leds):
+                    led.r = led_data[last_led_index+1][i][0]
+                    led.g = led_data[last_led_index+1][i][1]
+                    led.b = led_data[last_led_index+1][i][2]
+                    led_sum += led.r + led.g + led.b
+                leds_driver.write_data(None)
+                last_led_index += 1
+        time.sleep(0.005)
+
+    stop_event.set()
+
+
+def run_show(drone_clients, music_file, LED_cmds, drone_cmds, drone_offsets, music_offset, max_runtime):
+    print('Loading drone commands')
+    commands = load_commands(drone_cmds)
+    print(commands)
+
+    print('Starting pulseaudio')
+    pulseaudio_process = run_pulseaudio()
+    # while pulseaudio_process is None:
+    #     print in
+    #     time.sleep(0.1)
+
+    print('Initializing music')
+    get_music_time, play_music, stop_music, is_playing = init_music(music_file)
+
+    print('Starting threads')
+    stop_event = threading.Event()
+    threads = []
+    end_calls = []
+    for i, dc in enumerate(drone_clients):
+        drone_fail_event = threading.Event()
+        end_calls.append(drone_fail_event)
+        drone_thread = Thread(target=command_drone, args=(dc, get_music_time, is_playing, commands, i+1, drone_offsets[i], drone_fail_event, stop_event))
+        drone_thread.start()
+        threads.append(drone_thread)
+
+    print(end_calls)
+    
+    music_thread = Thread(target=command_LEDs, args=(drone_clients, end_calls, LED_cmds, play_music, get_music_time, is_playing, music_offset, max_runtime, stop_event))
+    music_thread.start()
+    threads.append(music_thread)
+
+    for t in threads:
+        t.join()
+
+    print('Stopping music')
+    stop_music()
+    if pulseaudio_process is not None:
+        atexit.register(pulseaudio_process.terminate)
+        print('Pulseaudio terminated.')
+
+
+def stop_drones(drone_clients, mocap_clients, bounds_list):
+    for dc in drone_clients:
+        dc.disconnect()
+
+    for mocap_client in mocap_clients:
+        mocap_client.close()
+    
+    for i, dc in enumerate(drone_clients):
+        data = {}
+        data['drone'] = dc.data
+        data['mocap'] = mocap_clients[i].data
+
+        with open(dc.filename+'.json', 'w') as outfile:
+            json.dump(data, outfile, sort_keys=False)
+
+        print(f"Outcome of drone {i+1}")
+        print_outcome(dc.data, bounds_list)
 
 class MarkerdeckScan():
     def __init__(self):

@@ -153,11 +153,11 @@ if __name__ == '__main__':
         uri,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=True, ### Disable at your own risk
+        use_safety=False, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
-        disable_failover=True, ### If true drone will not switch observers on sensor failure
-        set_bounds=True, ### Sends custom bounds to update the defaults
+        disable_failover=False, ### If true drone will not switch observers on sensor failure
+        set_bounds=False, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         bounds_list=bounds_list,
         marker_deck_ids=marker_deck_ids if use_mocap else None,
@@ -195,21 +195,21 @@ if __name__ == '__main__':
         lambda dc: dc.stop(3),
         lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
         lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
-        lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=1.0),
-        lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0),
-        lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=1.0),
-        # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=5.0), # Move
-        lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=1.0), # Stop
-        lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0), # Move
-        lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=1.0), # Stop
-        lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=5.0), # Move
-        lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=1.0), # Stop
-        lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Move
-        lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Stop
+        lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=20.0),
+        # lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0),
+        # lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=1.0),
+        # # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=5.0), # Move
+        # lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=1.0), # Stop
+        # lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0), # Move
+        # lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=1.0), # Stop
+        # lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=5.0), # Move
+        # lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=1.0), # Stop
+        # lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Move
+        # lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Stop
 
         #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        lambda dc: dc.move_frame([-3, -0.5, 0, 0, "Q"], t=5.0),
+        lambda dc: dc.move_frame([0, 0, 0, 0, "W"], t=5.0),
     ]
 
     # Run flight commands

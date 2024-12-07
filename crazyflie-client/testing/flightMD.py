@@ -13,6 +13,7 @@ from multiprocessing import SimpleQueue
 import cflib.crazyflie.mem.led_driver_memory as LEDLib 
 from threading import Thread
 from threading import Lock
+import threading
 
 # Imports for qualisys (the motion capture system)
 from threading import Thread
@@ -45,36 +46,17 @@ variables = [
     'ae483log.v_y',
     'ae483log.v_z',
     # State estimates (default observer)
-    # 'stateEstimate.x',
-    # 'stateEstimate.y',
-    # 'stateEstimate.z',
-    # 'stateEstimate.yaw',
-    # 'stateEstimate.pitch',
-    # 'stateEstimate.roll',
-    # 'stateEstimate.vx',
-    # 'stateEstimate.vy',
-    # 'stateEstimate.vz',
     # Measurements
     'ae483log.w_x',
     'ae483log.w_y',
     'ae483log.w_z',
-    # 'ae483log.n_x',
-    # 'ae483log.n_y',
-    # 'ae483log.r',
-    # 'ae483log.a_z',
     # Desired position (custom controller)
     'ae483log.p_x_des',
     'ae483log.p_y_des',
     'ae483log.p_z_des',
     # Desired position (default controller)
-    # 'ctrltarget.x',
-    # 'ctrltarget.y',
-    # 'ctrltarget.z',
     # Motor power commands
     'ae483log.m_1',
-    # 'ae483log.m_2',
-    # 'ae483log.m_3',
-    # 'ae483log.m_4',
     # Mocap
     'ae483log.p_x_mocap',
     'ae483log.p_y_mocap',
@@ -85,31 +67,19 @@ variables = [
     # Safety variable
     'extravars.set_motors',
     # New measurments,
-    # 'extravars.a_x',
-    # 'extravars.a_y',
     'extravars.v_x_int',
     'extravars.v_y_int',
     'extravars.v_z_int',
     'extravars.p_x_int',
     'extravars.p_y_int',
     'extravars.p_z_int',
-    # 'extravars.a_x_in_W',
-    # 'extravars.a_y_in_W',
-    # 'extravars.a_z_in_W',
-    # 'extravars.flow_age',
-    # 'extravars.r_age',
     'extravars.mocap_age',
-    # 'extravars.a_x_0',
-    # 'extravars.a_y_0',
-    # 'extravars.a_z_0',
     'extravars.violation_index',
     'extravars.violation_value',
     'extravars.violation_lower',
     'extravars.violation_upper',
     'extravars.current_obs',
-    # 'extravars.psi_des',
     'extravars.psi_des_norm',
-    # 'extravars.tau_z',
     'debugvars.max_mocap_age',
     'debugvars.max_p_dis'
     ]
@@ -234,7 +204,7 @@ if __name__ == '__main__':
             drone_client.initialize_offset(mocap_obj=mocap_clients[i])
 
     ## Flight code here!
-    base_height = 1.0
+    base_height = 0.7
     def getFlightCommands():
         flight_commands_1 = [
             #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -267,27 +237,31 @@ if __name__ == '__main__':
             lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0),
             lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=1.0),
             # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Stop
+            lambda dc: dc.move_frame([-2, -0.5, base_height, 90, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-2, -0.5, base_height, 90, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-2, 0.5, base_height, 180, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-2, 0.5, base_height, 180, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-3, 0.5, base_height, 270, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-3, 0.5, base_height, 270, "Q"], t=1.0), # Stop
+            lambda dc: dc.move_frame([-3, -0.5, base_height, 360, "Q"], t=5.0), # Move
+            lambda dc: dc.move_frame([-3, -0.5, base_height, 360, "Q"], t=5.0), # Stop
  
             #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([-3, -0.5, 0, 0, "Q"], t=5.0),
+            lambda dc: dc.move_frame([-3, -0.5, 0, 360, "Q"], t=5.0),
         ]
         return [flight_commands_1, flight_commands_2]
 
 
-    def drone_thread(drone_client, flight_commands, lock):
+    
+    
+
+    def drone_thread(drone_client, flight_commands, end_call):
         for command in flight_commands:
             if(drone_client.data['extravars.set_motors']['data'][-1] == 1):
                 #with lock:
                 command(drone_client)
             else:
+                end_call.set()
                 break  
 
     allfcs = getFlightCommands()
@@ -296,19 +270,22 @@ if __name__ == '__main__':
 
     song_file = "bad_apple.mp3"
     cmd_file = "bad_apple_program.csv"
-    runtime = 40
+    runtime = 45
     offset = 0.5
 
+
     threads = []
-    t1 = Thread(target=drone_thread, args=(drone_client_1, flight_commands_1, shared_lock))
+    t1_done = threading.Event()
+    t1 = Thread(target=drone_thread, args=(drone_client_1, flight_commands_1, t1_done))
     t1.start()
     threads.append(t1)
 
-    t2 = Thread(target=drone_thread, args=(drone_client_2, flight_commands_2, shared_lock))
+    t2_done = threading.Event()
+    t2 = Thread(target=drone_thread, args=(drone_client_2, flight_commands_2, t2_done))
     t2.start()
     threads.append(t2)
 
-    music_thread = Thread(target=play_song_multidrone, args=([drone_client_1, drone_client_2], cmd_file, song_file, runtime, offset))
+    music_thread = Thread(target=play_song_multidrone, args=([drone_client_1, drone_client_2], [t1_done, t2_done], cmd_file, song_file, runtime, offset))
     music_thread.start()
     threads.append(music_thread)
 
