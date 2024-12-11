@@ -33,6 +33,7 @@ variables = [
     'ae483log.v_x',
     'ae483log.v_y',
     'ae483log.v_z',
+    # State estimates (default observer)
     # Measurements
     'ae483log.w_x',
     'ae483log.w_y',
@@ -41,6 +42,7 @@ variables = [
     'ae483log.p_x_des',
     'ae483log.p_y_des',
     'ae483log.p_z_des',
+    # Desired position (default controller)
     # Motor power commands
     'ae483log.m_1',
     # Mocap
@@ -69,6 +71,7 @@ variables = [
     'debugvars.max_mocap_age',
     'debugvars.max_p_dis'
     ]
+
 # Specify the uri of the drone to which you want to connect (if your radio
 # channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
 uri = 'radio://0/16/2M/22E7E7E7E7' # <-- FIXME
@@ -133,35 +136,22 @@ if __name__ == '__main__':
     #           'psi_upper': 2*np.pi}
 
     # Example, see list above or controller code for names
-    BOUNDS = {'phi_lower': -4.0,
-              'phi_upper': 4.0,
-              'theta_lower': -4.0,
-              'theta_upper': 4.0,
-              'w_x_lower': -40.0,
-              'w_x_upper': 40.0,
-              'w_y_lower': -40.0,
-              'w_y_upper': 40.0,
-              'a_x_in_W_lower': -100,
-              'a_x_in_W_upper': 100,
-              'a_y_in_W_lower': -100,
-              'a_y_in_W_upper': 100,
-              'a_z_in_W_lower': -100,
-              'a_z_in_W_upper': 100}
+    BOUNDS = {'v_z_upper': 0.5}
 
     # Create and start the client that will connect to the drone
     drone_client = CrazyflieClient(
         uri,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=False, ### Disable at your own risk
+        use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
         disable_failover=False, ### If true drone will not switch observers on sensor failure
-        set_bounds=False, ### Sends custom bounds to update the defaults
+        set_bounds=True, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         bounds_list=bounds_list,
         marker_deck_ids=marker_deck_ids if use_mocap else None,
-        filename='hardware_data',
+        filename='safety_test',
         variables=variables
     )
 
@@ -189,13 +179,13 @@ if __name__ == '__main__':
     # drone_client.offset = [0, 0, 0, 0]
 
     ## Flight code here!
-    base_height = 0.7
+    base_height = 0.4
     flight_commands = [
         #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
         lambda dc: dc.stop(3),
         lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
         lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
-        lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=20.0),
+        lambda dc: dc.move_frame([0, 0, 10000, 0, "W"], t=0.5),
         # lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0),
         # lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=1.0),
         # # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

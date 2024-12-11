@@ -93,8 +93,8 @@ bounds_list = ["n_x","n_y","r",
 
 ###################################
 # FLIGHT CODE
-uris = ['radio://0/32/2M/11E7E7E7E7',
-        'radio://1/16/2M/22E7E7E7E7']
+uris = ['radio://1/32/2M/11E7E7E7E7',
+        'radio://0/16/2M/22E7E7E7E7']
 marker_decks = [30, 10]
 filenames = ['drone_1_data', 'drone_2_data']
 
@@ -133,13 +133,14 @@ if __name__ == '__main__':
                                     filenames=filenames, 
                                     variables=variables,
                                     disable_failover=False,
-                                    set_bounds=False,
-                                    bounds=BOUNDS)
+                                    set_bounds=True,
+                                    bounds=BOUNDS,
+                                    bounds_list=bounds_list)
     
     run_show(drone_clients=drone_clients, 
-             music_file="60bpm.mp3",
-             LED_cmds="60bpm_program.csv",
-             drone_cmds="test_cmds.csv",
+             music_file="time_traveler_shortened.mp3",
+             LED_cmds="time_traveler_short_program.csv",
+             drone_cmds="time_traveler_cmds.csv",
              drone_offsets=[0, 0],
              music_offset=0.5,
              max_runtime=60)

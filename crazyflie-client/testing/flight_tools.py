@@ -220,6 +220,8 @@ class CrazyflieClient:
         self.cf.param.set_value('ring.effect', 0) # Turn LED off to save power
         self.params_sent += 1
 
+        print('In here 1')
+
         # Start logging
         self.logconfs = []
         self.logconfs.append(LogConfig(name=f'LogConf0', period_in_ms=10))
@@ -245,7 +247,7 @@ class CrazyflieClient:
                 print(f'CrazyflieClient: Could not start {logconf.name} because of bad configuration')
                 for v in logconf.variables:
                     print(f' - {v.name}')
-        
+
         print(f'CrazyflieClient: Fully connected to {uri}')
         self.is_fully_connected = True
 
@@ -695,10 +697,11 @@ def play_song_multidrone(drone_clients, end_calls, cmd_file,  music_file, runtim
         atexit.register(pulseaudio_process.terminate)
         print('Pulseaudio terminated.')
 
-def start_drones(uris, marker_decks, filenames, variables, disable_failover=False, set_bounds=False, bounds=None):
+def start_drones(uris, marker_decks, filenames, variables, bounds_list, disable_failover=False, set_bounds=False, bounds=None):
     cflib.crtp.init_drivers()
     drone_clients = []
     for i, uri in enumerate(uris):
+        time.sleep(1.0)
         marker_id = [marker_decks[i]+1, marker_decks[i]+2, marker_decks[i]+3, marker_decks[i]+4]
         dc = CrazyflieClient(
             uri,
@@ -712,12 +715,14 @@ def start_drones(uris, marker_decks, filenames, variables, disable_failover=Fals
             filename=filenames[i],
             variables=variables,
             disable_failover=disable_failover,
-            marker_deck_ids=marker_id
+            marker_deck_ids=marker_id,
+            bounds_list=bounds_list
         )
         drone_clients.append(dc)
-
-    while(any(not dc.is_fully_connected for dc in drone_clients)):
-        time.sleep(0.1)
+        # time.sleep(20)
+        while(not dc.is_fully_connected):
+            print('In here 2', uri)
+            time.sleep(0.1)
 
     mocap_clients = []
     # Create and start the client that will connect to the motion capture system

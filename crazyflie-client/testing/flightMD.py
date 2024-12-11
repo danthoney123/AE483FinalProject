@@ -115,7 +115,7 @@ if __name__ == '__main__':
     PowerSwitch(uri_2).stm_power_cycle()
     time.sleep(5)
     # Specify whether or not to use the motion capture system
-    use_mocap = True
+    use_mocap = False
 
     # Example, see full list in _fully_connected() at top of file
     # BOUNDS = {'n_x_lower': -81,
@@ -148,14 +148,14 @@ if __name__ == '__main__':
         uri_1,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=True, ### Disable at your own risk
+        use_safety=False, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
-        set_bounds=True, ### Sends custom bounds to update the defaults
+        set_bounds=False, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         marker_deck_ids=marker_deck_ids_1 if use_mocap else None,
         bounds_list=bounds_list,
-        filename='md_flight_test_D1',
+        filename='md_LED_test_D1_time_traveler',
         variables=variables,
         disable_failover=False
     )
@@ -164,14 +164,14 @@ if __name__ == '__main__':
         uri_2,
         use_controller=True, ## If disabled uses default controller
         use_observer=True, ### If disabled uses default observer
-        use_safety=True, ### Disable at your own risk
+        use_safety=False, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
-        set_bounds=True, ### Sends custom bounds to update the defaults
+        set_bounds=False, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         marker_deck_ids=marker_deck_ids_2 if use_mocap else None,
         bounds_list=bounds_list,
-        filename='md_flight_test_D2',
+        filename='md_LED_test_D2_time_traveler',
         variables=variables,
         disable_failover=False
     )
@@ -206,49 +206,78 @@ if __name__ == '__main__':
     ## Flight code here!
     base_height = 0.7
     def getFlightCommands():
-        flight_commands_1 = [
-            #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.stop(3),
-            lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
-            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
-            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=1.0),
-            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0),
-            lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=1.0),
-            # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([-3, 0.5, base_height, 90, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-3, 0.5, base_height, 90, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-3, -0.5, base_height, 180, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-3, -0.5, base_height, 180, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-2, -0.5, base_height, 270, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-2, -0.5, base_height, 270, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-2, 0.5, base_height, 360, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-2, 0.5, base_height, 360, "Q"], t=5.0), # Stop
+        # flight_commands_1 = [
+        #     #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
+        #     lambda dc: dc.stop(3),
+        #     lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
+        #     lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
+        #     lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=1.0),
+        #     lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0),
+        #     lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=1.0),
+        #     # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #     lambda dc: dc.move_frame([-3, 0.5, base_height, 90, "Q"], t=5.0), # Move
+        #     lambda dc: dc.move_frame([-3, 0.5, base_height, 90, "Q"], t=1.0), # Stop
+        #     lambda dc: dc.move_frame([-3, -0.5, base_height, 180, "Q"], t=5.0), # Move
+        #     lambda dc: dc.move_frame([-3, -0.5, base_height, 180, "Q"], t=1.0), # Stop
+        #     lambda dc: dc.move_frame([-2, -0.5, base_height, 270, "Q"], t=5.0), # Move
+        #     lambda dc: dc.move_frame([-2, -0.5, base_height, 270, "Q"], t=1.0), # Stop
+        #     lambda dc: dc.move_frame([-2, 0.5, base_height, 360, "Q"], t=5.0), # Move
+        #     lambda dc: dc.move_frame([-2, 0.5, base_height, 360, "Q"], t=5.0), # Stop
 
-            #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([-2, 0.5, 0, 360, "Q"], t=5.0),
-        ]
+        #     #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #     lambda dc: dc.move_frame([-2, 0.5, 0, 360, "Q"], t=5.0),
+        # ]
 
-        flight_commands_2 = [
-            #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.stop(3),
-            lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
-            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
-            lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=1.0),
-            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0),
-            lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=1.0),
-            # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([-2, -0.5, base_height, 90, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-2, -0.5, base_height, 90, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-2, 0.5, base_height, 180, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-2, 0.5, base_height, 180, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-3, 0.5, base_height, 270, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-3, 0.5, base_height, 270, "Q"], t=1.0), # Stop
-            lambda dc: dc.move_frame([-3, -0.5, base_height, 360, "Q"], t=5.0), # Move
-            lambda dc: dc.move_frame([-3, -0.5, base_height, 360, "Q"], t=5.0), # Stop
+        # flight_commands_2 = [
+        #     #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
+        #     lambda dc: dc.stop(3),
+        #     lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
+        #     lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
+        #     lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=1.0),
+        #     lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0),
+        #     lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=1.0),
+        #     # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #     lambda dc: dc.move_frame([-2, -0.5, base_height, 90, "Q"], t=5.0), # Move
+        #     lambda dc: dc.move_frame([-2, -0.5, base_height, 90, "Q"], t=1.0), # Stop
+        #     lambda dc: dc.move_frame([-2, 0.5, base_height, 180, "Q"], t=5.0), # Move
+        #     lambda dc: dc.move_frame([-2, 0.5, base_height, 180, "Q"], t=1.0), # Stop
+        #     lambda dc: dc.move_frame([-3, 0.5, base_height, 270, "Q"], t=5.0), # Move
+        #     lambda dc: dc.move_frame([-3, 0.5, base_height, 270, "Q"], t=1.0), # Stop
+        #     lambda dc: dc.move_frame([-3, -0.5, base_height, 360, "Q"], t=5.0), # Move
+        #     lambda dc: dc.move_frame([-3, -0.5, base_height, 360, "Q"], t=5.0), # Stop
  
-            #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            lambda dc: dc.move_frame([-3, -0.5, 0, 360, "Q"], t=5.0),
+        #     #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #     lambda dc: dc.move_frame([-3, -0.5, 0, 360, "Q"], t=5.0),
+        # ]
+
+        # flight_commands_1 = [
+        #     lambda dc: dc.stop(3),
+        #     lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
+        #     lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
+        #     lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
+        #     lambda dc: dc.move_frame([0, 0, base_height, 360, "W"], t=10.0),
+        #     lambda dc: dc.move_frame([0, 0, 0.0, 360, "W"], t=5.0),
+        # ]
+
+        # flight_commands_2 = [
+        #     lambda dc: dc.stop(3),
+        #     lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
+        #     lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
+        #     lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=10.0),
+        #     lambda dc: dc.move_frame([0, 0, base_height, 360, "W"], t=10.0),
+        #     lambda dc: dc.move_frame([0, 0, 0.0, 360, "W"], t=5.0),
+        # ]
+
+        flight_commands_1 = [
+
+            lambda dc: dc.stop(15)
         ]
+        
+        flight_commands_2 = [
+
+            lambda dc: dc.stop(15)
+        ]
+
         return [flight_commands_1, flight_commands_2]
 
 
@@ -268,9 +297,9 @@ if __name__ == '__main__':
     flight_commands_1 = allfcs[0]
     flight_commands_2 = allfcs[1]
 
-    song_file = "bad_apple.mp3"
-    cmd_file = "bad_apple_program.csv"
-    runtime = 45
+    song_file = "time_traveler_shortened.mp3"
+    cmd_file = "time_traveler_short_program.csv"
+    runtime = 15
     offset = 0.5
 
 
