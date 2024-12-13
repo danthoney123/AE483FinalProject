@@ -54,5 +54,8 @@ Used for performing the fourier transform needed to translate audio to LED light
 Pulse Audio (optional): \
 External program used to play audio on WSL. Some installations of WSL will play audio fine, others will not. Follow installation instructions here: https://x410.dev/cookbook/wsl/enabling-sound-in-wsl-ubuntu-let-it-sing/ . Double check that path in flight_tools.py is accurate to where it is installed on your system. 
 
+## Repository
+Check out the full repository for this work here: https://github.com/danthoney123/AE483FinalProject
+
 
 
