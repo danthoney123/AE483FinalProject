@@ -32,8 +32,7 @@ crazyflie-firmware/src/modules/interface/controller/user_specific_logic_dan.h \
 Controller and observer for other drone using channel 16. \
 \
 crazyflie-firmware/src/deck/drivers/src/ledring12.c : \
-Modified a cycle wait function on line 1091 to reduce the time between LED ring mode updates.\
-
+Modified a cycle wait function on line 1091 to reduce the time between LED ring mode updates.
 ## Audio Visualization
 crazyflie-client/audio_viz/visualize_audio.ipynb : \
 Notebook used to generate necessary LED program csv using mp3 file. Can also produce a video simulation of the LED ring. 
@@ -43,12 +42,9 @@ LED program required for lightshow. \
 \
 crazyflie-client/testing/time_traveler_cmds.csv : \
 List of positions read by client to translate into movement commands. \
-\
-
 ## Flight Data
 
-## Dependencies (Not Included in AE483 Conda Environment)
-# Python Packages
+# Python Packages (Not included in AE483 Conda Environment)
 PyGame : \
 Used for playing audio and retrieving timestamps when a song is playing. Can be installed throught pip. ("pip install pygame") \
 \
