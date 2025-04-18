@@ -34,36 +34,17 @@ variables = [
     'ae483log.v_y',
     'ae483log.v_z',
     # State estimates (default observer)
-    'stateEstimate.x',
-    'stateEstimate.y',
-    'stateEstimate.z',
-    'stateEstimate.yaw',
-    'stateEstimate.pitch',
-    'stateEstimate.roll',
-    'stateEstimate.vx',
-    'stateEstimate.vy',
-    'stateEstimate.vz',
     # Measurements
     'ae483log.w_x',
     'ae483log.w_y',
     'ae483log.w_z',
-    'ae483log.n_x',
-    'ae483log.n_y',
-    'ae483log.r',
-    'ae483log.a_z',
     # Desired position (custom controller)
     'ae483log.p_x_des',
     'ae483log.p_y_des',
     'ae483log.p_z_des',
     # Desired position (default controller)
-    'ctrltarget.x',
-    'ctrltarget.y',
-    'ctrltarget.z',
     # Motor power commands
     'ae483log.m_1',
-    'ae483log.m_2',
-    'ae483log.m_3',
-    'ae483log.m_4',
     # Mocap
     'ae483log.p_x_mocap',
     'ae483log.p_y_mocap',
@@ -74,32 +55,27 @@ variables = [
     # Safety variable
     'extravars.set_motors',
     # New measurments,
-    'extravars.a_x',
-    'extravars.a_y',
     'extravars.v_x_int',
     'extravars.v_y_int',
     'extravars.v_z_int',
     'extravars.p_x_int',
     'extravars.p_y_int',
     'extravars.p_z_int',
-    'extravars.a_x_in_W',
-    'extravars.a_y_in_W',
-    'extravars.a_z_in_W',
-    'extravars.flow_age',
-    'extravars.r_age',
     'extravars.mocap_age',
-    'extravars.a_x_0',
-    'extravars.a_y_0',
-    'extravars.a_z_0',
     'extravars.violation_index',
     'extravars.violation_value',
     'extravars.violation_lower',
-    'extravars.violation_upper'
+    'extravars.violation_upper',
+    'extravars.current_obs',
+    'extravars.psi_des_norm',
+    'debugvars.max_mocap_age',
+    'debugvars.max_p_dis'
     ]
+
 # Specify the uri of the drone to which you want to connect (if your radio
 # channel is X, the uri should be 'radio://0/X/2M/E7E7E7E7E7')
-uri = 'radio://0/32/2M/E7E7E7E7E7' # <-- FIXME
-# uri = 'radio://0/16/2M/E7E7E7E7E7'
+uri = 'radio://0/16/2M/22E7E7E7E7' # <-- FIXME
+# uri = 'radio://0/32/2M/E7E7E7E7E8' # <-- FIXME
 
 # Specify the IP address of the motion capture system
 ip_address = '128.174.245.190' # FIXME
@@ -107,15 +83,15 @@ ip_address = '128.174.245.190' # FIXME
 # Specify the name of the rigid body that corresponds to your active marker
 # deck in the motion capture system. If your marker deck number is X, this name
 # should be 'marker_deck_X'.
-marker_deck_name = 'marker_deck_30' # <-- FIXME
-# marker_deck_name = 'marker_deck_10'
+# marker_deck_name = 'marker_deck_30' # <-- FIXME
+marker_deck_name = 'marker_deck_10'
 
 # Specify the marker IDs that correspond to your active marker deck in the
 # motion capture system. If your marker deck number is X, these IDs should be
 # [X + 1, X + 2, X + 3, X + 4]. They are listed in clockwise order (viewed
 # top-down), starting from the front.
-marker_deck_ids = [31, 32, 33, 34] # FIXME
-# marker_deck_ids = [11, 13, 13, 14]
+# marker_deck_ids = [31, 32, 33, 34] # FIXME
+marker_deck_ids = [11, 12, 13, 14]
 
 ###################################
 # CLIENT FOR CRAZYFLIE
@@ -149,14 +125,17 @@ if __name__ == '__main__':
     cflib.crtp.init_drivers()
 
     # Example, see list above or controller code for names
-    BOUNDS = {'w_x_lower': -2.0,
-              'w_y_lower': -2.0,
-              'w_x_upper': 2.0,
-              'w_y_upper': 2.0,
-              'w_z_lower': -4.0,
-              'w_z_upper': 4.0,
-              'psi_lower': -2*np.pi,
-              'psi_upper': 2*np.pi}
+    # BOUNDS = {'w_x_lower': -2.0,
+    #           'w_y_lower': -2.0,
+    #           'w_x_upper': 2.0,
+    #           'w_y_upper': 2.0,
+    #           'w_z_lower': -4.0,
+    #           'w_z_upper': 4.0,
+    #           'psi_lower': -2*np.pi,
+    #           'psi_upper': 2*np.pi}
+
+    # Example, see list above or controller code for names
+    BOUNDS = {'v_z_upper': 0.5}
 
     # Create and start the client that will connect to the drone
     drone_client = CrazyflieClient(
@@ -166,11 +145,12 @@ if __name__ == '__main__':
         use_safety=True, ### Disable at your own risk
         use_mocap=use_mocap, ### Must have mocap deck installed and mocap system live, set above
         use_LED=True, ### Set to true in all cases where the flow sensor is missing or obstructed
-        set_bounds=False, ### Sends custom bounds to update the defaults
+        disable_failover=False, ### If true drone will not switch observers on sensor failure
+        set_bounds=True, ### Sends custom bounds to update the defaults
         bounds = BOUNDS,
         bounds_list=bounds_list,
         marker_deck_ids=marker_deck_ids if use_mocap else None,
-        filename='hardware_data',
+        filename='safety_test',
         variables=variables
     )
 
@@ -195,25 +175,36 @@ if __name__ == '__main__':
 
     # Find offset 
     drone_client.initialize_offset(mocap_obj=mocap_client)
+    # drone_client.offset = [0, 0, 0, 0]
 
     ## Flight code here!
+    base_height = 0.4
     flight_commands = [
-        # Demo flight of the move_frame functionS
-        lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.2, 0, "W"], t=1.0),
-        lambda: drone_client.move_frame([0, 0, 0.2, 0, "W"], [0, 0, 0.5, 0, "W"], t=2.0),
-        # lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [0, 0, 0.5, 0, "W"], t=3.0),
-        lambda: drone_client.move_frame([0, 0, 0.5, 0, "W"], [-2.5, 0, 0.6, 0, "G"], t=5.0),
-        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.6, 0, "G"], t=3.0),
-        # lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 0, "G"], t=5.0),
-        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [0.0, 0, 0.5, 135, "G"], t=10.0),
-        lambda: drone_client.move_frame([-2.5, 0, 0.6, 0, "G"], [-2.5, 0, 0.0, 0, "G"], t=3.0)
-        # lambda: drone_client.move_frame([0.0, 0, 0.5, 0, "W"], [0.0, 0, 0.0, 0, "W"], t=2.0)
+        #!!!!!!!!!!!!!! START UP AND GO UP TO HEIGHT !!!!!!!!!!!!!!!!!!!!!!!!!!
+        lambda dc: dc.stop(3),
+        lambda dc: dc.move_frame(p_1 = [0, 0, 0.0, 0, "W"], p_2=[0, 0, 0.2, 0, "W"], t=1.0),
+        lambda dc: dc.move_frame([0, 0, base_height, 0, "W"], t=5.0),
+        lambda dc: dc.move_frame([0, 0, 10000, 0, "W"], t=0.5),
+        # lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0),
+        # lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=1.0),
+        # # #!!!!!!!!!!!!!!MOVE IN SQUARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=5.0), # Move
+        # lambda dc: dc.move_frame([-2, -0.5, base_height, 0, "Q"], t=1.0), # Stop
+        # lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=5.0), # Move
+        # lambda dc: dc.move_frame([-2, 0.5, base_height, 0, "Q"], t=1.0), # Stop
+        # lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=5.0), # Move
+        # lambda dc: dc.move_frame([-3, 0.5, base_height, 0, "Q"], t=1.0), # Stop
+        # lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Move
+        # lambda dc: dc.move_frame([-3, -0.5, base_height, 0, "Q"], t=5.0), # Stop
+
+        #!!!!!!!!!!!!!!!!!LANDING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        lambda dc: dc.move_frame([0, 0, 0, 0, "W"], t=5.0),
     ]
 
     # Run flight commands
     for command in flight_commands:
         if(drone_client.data['extravars.set_motors']['data'][-1] == 1):
-            command()
+            command(drone_client)
         else:
             break            
 

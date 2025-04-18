@@ -42,6 +42,11 @@ static float p_y_des = 0.0f;
 static float p_z_des = 0.0f;
 static float psi_des = 0.0f;
 
+// Stuff for yawing and such
+static float p_x_err;
+static float p_y_err;
+static float psi_des_norm;
+
 // Input
 static float tau_x = 0.0f;
 static float tau_y = 0.0f;
@@ -144,7 +149,18 @@ static float r_old = 0.0f;
 static float mocap_old = 0.0;
 static uint32_t sample_count = 1;
 
+// Failover system
+static uint8_t disable_failover = 0; // Failover by default
+static uint8_t current_observer = 0; // Track current observer
+
 // Debug variables starts
+static uint16_t max_mocap_age = 0;
+static uint16_t mocap_age_old;
+static float p_x_des_old = 0;
+static float p_y_des_old = 0;
+static float p_z_des_old = 0;
+static float p_dis;
+static float max_p_dis = 0;
 // Debug variables end
 
 void initialize_observers(){
@@ -394,6 +410,7 @@ void ae483UpdateWithPose(poseMeasurement_t *meas)
   //  meas->quat.y    float     y component of quaternion from external orientation measurement
   //  meas->quat.z    float     z component of quaternion from external orientation measurement
   //  meas->quat.w    float     w component of quaternion from external orientation measurement
+
   // Position
   p_x_mocap = meas->x;
   p_y_mocap = meas->y;
@@ -477,7 +494,6 @@ void controllerAE483(control_t *control,
     // initialize_observers();
     initialize_bounds();
 
-
     // Using Drone World Frame
     // Reset States
     p_x = 0.0f;
@@ -521,21 +537,48 @@ void controllerAE483(control_t *control,
     r_old = r;
     sample_count = 1;
 
+    // Reset failover system
+    current_observer = 0;
+    disable_failover = 0;
+
+    // Reset debug vars 
+    max_mocap_age = 0;
+    p_x_des_old = 0;
+    p_y_des_old = 0;
+    p_z_des_old = 0;
+    max_p_dis = 0;
+
     reset = false;
   }
 
   // State estimates
-  if (use_observer && !use_mocap && !use_LED) {
-    // Custom observer without mocap or LED Deck
-    STATE_ESTIMATION_WITHOUT_MOCAP_LED;
-
-  } else if (use_observer && use_mocap && !use_LED){
+  bool use_flow = !use_LED;
+  if (use_observer && use_mocap && use_flow && ((mocap_age < 10 && flow_age < 10 && r_age < 50) || disable_failover)){
     // Custom observer with mocap but without LED Deck
+    // Flow & Mocap, max sensor config, default
     STATE_ESTIMATION_WTH_MOCAP_WITHOUT_LED;
+    current_observer = 1;
 
-  } else if (use_observer && use_mocap && use_LED){
-    // Custom observer with mocap and with LED Deck
+  } else if (use_observer && use_flow && ((flow_age < 10 && r_age < 50) || disable_failover) ){
+    // Flow only
+    STATE_ESTIMATION_WITHOUT_MOCAP_LED;
+    current_observer = 2;
+  } else if (use_observer && use_mocap && ((mocap_age < 10) || disable_failover)){
+    // Mocap only
     STATE_ESTIMATION_WITH_MOCAP_LED;
+    current_observer = 3;
+
+  } else if (use_observer && !disable_failover) {
+    p_x = p_x_int;
+    p_y = p_y_int;
+    p_z = p_z_int;
+    psi += dt*w_z;
+    theta += dt*w_y;
+    phi += dt*w_x;
+    v_x = v_x_int;
+    v_y = v_y_int;
+    v_z = v_z_int;
+    current_observer = 4;
 
   } else {
     //Default observer
@@ -548,6 +591,7 @@ void controllerAE483(control_t *control,
     v_x = state->velocity.x*cosf(psi)*cosf(theta) + state->velocity.y*sinf(psi)*cosf(theta) - state->velocity.z*sinf(theta);
     v_y = state->velocity.x*(sinf(phi)*sinf(theta)*cosf(psi) - sinf(psi)*cosf(phi)) + state->velocity.y*(sinf(phi)*sinf(psi)*sinf(theta) + cosf(phi)*cosf(psi)) + state->velocity.z*sinf(phi)*cosf(theta);
     v_z = state->velocity.x*(sinf(phi)*sinf(psi) + sinf(theta)*cosf(phi)*cosf(psi)) + state->velocity.y*(-sinf(phi)*cosf(psi) + sinf(psi)*sinf(theta)*cosf(phi)) + state->velocity.z*cosf(phi)*cosf(theta);
+    current_observer = 5;
   }
 
   // Fix estimates before takeoff
@@ -583,6 +627,43 @@ void controllerAE483(control_t *control,
   } else {
     // Otherwise, motor power commands should be
     // chosen by the controller
+    // Controller errors:
+    if (use_mocap) {
+      if ((psi > HALF_PI && psi_mocap < -HALF_PI) || (psi < -HALF_PI && psi_mocap > HALF_PI)) {
+        psi = psi_mocap;
+      }
+
+      psi_des_norm = fmod(radians(psi_des), 2.0f * PI);
+      if (psi_des_norm > PI) {
+        psi_des_norm -= 2.0f * PI;
+      } else if (psi_des_norm < -PI) {
+        psi_des_norm += 2.0f * PI; 
+      }
+
+      if (psi_des_norm > HALF_PI && psi < -HALF_PI) {
+        psi_des_norm -= 2.0f*PI;
+      } else if (psi_des_norm < -HALF_PI && psi > HALF_PI) { 
+        psi_des_norm += 2.0f*PI; 
+      }
+    }
+
+    // Debug
+    if (safe_to_set_motors){
+      if (mocap_age > max_mocap_age){
+        max_mocap_age = mocap_age;
+      }
+      mocap_age_old = mocap_age;
+
+      p_dis = pow((pow((p_x_des - p_x_des_old), 2.0f) + pow((p_y_des - p_y_des_old), 2.0f) + pow((p_z_des - p_z_des_old), 2.0f)), 0.5f);
+      if (p_dis > max_p_dis){
+        max_p_dis = p_dis;
+      }
+      p_x_des_old = p_x_des;
+      p_y_des_old = p_y_des;
+      p_z_des_old = p_z_des;
+    }
+
+
     CONTROLLER;
   }
 
@@ -596,12 +677,6 @@ void controllerAE483(control_t *control,
 //              1234567890123456789012345678 <-- max total length
 //              group   .name
 LOG_GROUP_START(ae483log)
-LOG_ADD(LOG_FLOAT,       n_x,                    &n_x) // 
-LOG_ADD(LOG_FLOAT,       n_y,                    &n_y)
-LOG_ADD(LOG_FLOAT,       r,                      &r)
-LOG_ADD(LOG_FLOAT,       a_z,                    &a_z)
-LOG_ADD(LOG_UINT16,      num_tof,                &tof_count)
-LOG_ADD(LOG_UINT16,      num_flow,               &flow_count)
 LOG_ADD(LOG_FLOAT,       p_x,                    &p_x)
 LOG_ADD(LOG_FLOAT,       p_y,                    &p_y)
 LOG_ADD(LOG_FLOAT,       p_z,                    &p_z)
@@ -617,16 +692,7 @@ LOG_ADD(LOG_FLOAT,       w_z,                    &w_z)
 LOG_ADD(LOG_FLOAT,       p_x_des,                &p_x_des)
 LOG_ADD(LOG_FLOAT,       p_y_des,                &p_y_des)
 LOG_ADD(LOG_FLOAT,       p_z_des,                &p_z_des)
-LOG_ADD(LOG_FLOAT,       tau_x,                  &tau_x)
-LOG_ADD(LOG_FLOAT,       tau_y,                  &tau_y)
-LOG_ADD(LOG_FLOAT,       tau_z,                  &tau_z)
-LOG_ADD(LOG_FLOAT,       f_z,                    &f_z)
 LOG_ADD(LOG_UINT16,      m_1,                    &m_1)
-LOG_ADD(LOG_UINT16,      m_2,                    &m_2)
-LOG_ADD(LOG_UINT16,      m_3,                    &m_3)
-LOG_ADD(LOG_UINT16,      m_4,                    &m_4)
-LOG_ADD(LOG_FLOAT,       tau_x_cmd,              &tau_x_cmd)
-LOG_ADD(LOG_FLOAT,       tau_y_cmd,              &tau_y_cmd)
 LOG_ADD(LOG_FLOAT,       p_x_mocap,              &p_x_mocap)
 LOG_ADD(LOG_FLOAT,       p_y_mocap,              &p_y_mocap)
 LOG_ADD(LOG_FLOAT,       p_z_mocap,              &p_z_mocap)
@@ -637,33 +703,28 @@ LOG_GROUP_STOP(ae483log)
 
 LOG_GROUP_START(extravars)
 LOG_ADD(LOG_UINT8,       set_motors,             &safe_to_set_motors)
-LOG_ADD(LOG_FLOAT,       a_x,                    &a_x)
-LOG_ADD(LOG_FLOAT,       a_y,                    &a_y)
 LOG_ADD(LOG_FLOAT,       v_x_int,                &v_x_int)
 LOG_ADD(LOG_FLOAT,       v_y_int,                &v_y_int)
 LOG_ADD(LOG_FLOAT,       v_z_int,                &v_z_int)
 LOG_ADD(LOG_FLOAT,       p_x_int,                &p_x_int)
 LOG_ADD(LOG_FLOAT,       p_y_int,                &p_y_int)
 LOG_ADD(LOG_FLOAT,       p_z_int,                &p_z_int)
-LOG_ADD(LOG_FLOAT,       a_x_in_W,               &a_x_in_W)
-LOG_ADD(LOG_FLOAT,       a_y_in_W,               &a_y_in_W)
-LOG_ADD(LOG_FLOAT,       a_z_in_W,               &a_z_in_W)
 LOG_ADD(LOG_UINT32,      flow_age,               &flow_age)
 LOG_ADD(LOG_UINT32,      r_age,                  &r_age)
 LOG_ADD(LOG_UINT32,      mocap_age,              &mocap_age)
-LOG_ADD(LOG_FLOAT,       a_x_0,                  &a_x_0)
-LOG_ADD(LOG_FLOAT,       a_y_0,                  &a_y_0)
-LOG_ADD(LOG_FLOAT,       a_z_0,                  &a_z_0)
 LOG_ADD(LOG_INT8,        violation_index,        &bounds_violation_index)
 LOG_ADD(LOG_FLOAT,       violation_value,        &bounds_violation_value)
 LOG_ADD(LOG_FLOAT,       violation_lower,        &bounds_violation_lower)
 LOG_ADD(LOG_FLOAT,       violation_upper,        &bounds_violation_upper)
-LOG_ADD(LOG_FLOAT,       psi_des,                &psi_des)
+LOG_ADD(LOG_UINT8,       current_obs,            &current_observer) 
+LOG_ADD(LOG_FLOAT,       psi_des_norm,           &psi_des_norm)
 LOG_GROUP_STOP(extravars)
 
-// LOG_GROUP_START(debugvars)
-// // ... put debug variables here temporarly ... 
-// LOG_GROUP_STOP(debugvars)
+LOG_GROUP_START(debugvars)
+// ... put debug variables here temporarly ...
+LOG_ADD(LOG_UINT16,      max_mocap_age,           &max_mocap_age)
+LOG_ADD(LOG_FLOAT,       max_p_dis,               &max_p_dis)
+LOG_GROUP_STOP(debugvars)
 
 //                1234567890123456789012345678 <-- max total length
 //                group   .name
@@ -675,4 +736,5 @@ PARAM_ADD(PARAM_UINT8,     use_safety,              &use_safety)
 PARAM_ADD(PARAM_UINT32,    bounds_update,           &bounds_update)
 PARAM_ADD(PARAM_UINT8,     use_mocap,               &use_mocap)
 PARAM_ADD(PARAM_UINT8,     use_LED,                 &use_LED)
+PARAM_ADD(PARAM_UINT8,     dis_failover,            &disable_failover)
 PARAM_GROUP_STOP(ae483par)
