@@ -145,7 +145,6 @@ if __name__ == '__main__':
     #           'n_x_upper': 82,
     #           'p_z_lower': -0.1}
 
-
     # Initialize radio
     cflib.crtp.init_drivers()
 
